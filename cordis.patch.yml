@@ -1,0 +1,5 @@
+# Inserted into the profile layer of the web profile.
+# The package declares dsh.client, so DSH also loads client/index.js into the Web UI.
+- insert:
+    - id: fatfish-dino
+      name: 'dsh-fatfish-dino'

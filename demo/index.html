@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fatfish Dino · DSH 插件预览</title>
+<style>
+  * { box-sizing: border-box; }
+  :root { color-scheme: dark; }
+  body {
+    margin: 0; min-height: 100vh; color: #e8ecf8;
+    font: 14px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: radial-gradient(1200px 700px at 80% -10%, #1d2b57 0%, transparent 60%), #0d1120;
+  }
+  .app { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
+  .side { border-right: 1px solid #232b44; padding: 20px 14px; background: rgba(12,17,33,.6); }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 800; letter-spacing: .3px; margin-bottom: 24px; }
+  .brand i { width: 28px; height: 28px; border-radius: 9px; background: linear-gradient(140deg,#5b8cff,#9257ee); display: block; }
+  .side h4 { margin: 18px 8px 8px; font-size: 11px; color: #7d89ab; letter-spacing: 1px; text-transform: uppercase; }
+  .side a { display: block; padding: 8px 10px; border-radius: 9px; color: #aeb9d6; text-decoration: none; font-size: 13px; }
+  .side a.on, .side a:hover { background: #1c2645; color: #fff; }
+  .main { display: flex; flex-direction: column; min-width: 0; }
+  header { padding: 16px 28px; border-bottom: 1px solid #232b44; display: flex; align-items: center; gap: 12px; }
+  header b { font-size: 15px; }
+  header .pill { margin-left: auto; font-size: 11px; color: #9aa7c8; border: 1px solid #2c3656; padding: 3px 10px; border-radius: 999px; }
+  .chat { flex: 1; overflow: auto; padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+  .card { max-width: 720px; padding: 22px 24px; border: 1px solid #293352; border-radius: 16px; background: linear-gradient(160deg, #171f39, #131a30); box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+  .card h1 { margin: 0 0 6px; font-size: 21px; letter-spacing: .2px; }
+  .card .sub { color: #93a0c4; font-size: 12px; margin-bottom: 18px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .tile { padding: 14px; border: 1px solid #2b3556; border-radius: 12px; background: rgba(255,255,255,.025); }
+  .tile h3 { margin: 0 0 6px; font-size: 13px; color: #a9c0ff; }
+  .tile p { margin: 0; font-size: 12px; color: #9aa6c6; line-height: 1.75; }
+  kbd { padding: 1px 6px; border: 1px solid #3a466b; border-bottom-width: 2px; border-radius: 5px; background: #1b2440; font: 11px ui-monospace, monospace; }
+  .src { margin-top: 16px; padding-top: 14px; border-top: 1px solid #293352; font-size: 11px; color: #7f8cae; line-height: 1.9; }
+  .src a { color: #8fa9ff; text-decoration: none; }
+  .src a:hover { text-decoration: underline; }
+  .note { max-width: 720px; font-size: 12px; color: #7f8cae; }
+  .composer { margin: 0 28px 26px; max-width: 760px; padding: 12px; border: 1px solid #2b3556; border-radius: 16px; background: #141c33; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+  .composer textarea { width: 100%; min-height: 62px; resize: none; border: 0; outline: 0; background: transparent; color: #e8ecf8; font: inherit; }
+  .composer textarea::placeholder { color: #6f7c9f; }
+  .tools { display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid #253054; position: relative; min-height: 44px; }
+  .native-effort, .ghost, .send { height: 32px; padding: 0 12px; border-radius: 999px; font-size: 12px; border: 1px solid #333e63; background: #1a2441; color: #c9d4f2; }
+  .native-effort:hover, .ghost:hover { border-color: #5b74c9; }
+  .send { margin-left: auto; border: 0; background: linear-gradient(100deg,#3f6ef5,#8a4cf0); color: #fff; font-weight: 700; padding: 0 16px; }
+  .live { font-size: 11px; color: #7f8cae; }
+  .settings-overlay { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; background: rgba(5, 9, 20, .62); }
+  .settings-dialog {
+    width: min(660px, calc(100vw - 32px)); max-height: min(760px, calc(100vh - 40px));
+    display: flex; flex-direction: column; overflow: hidden;
+    border: 1px solid #33406a; border-radius: 16px; background: #161d33;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .55);
+  }
+  .settings-head { display: flex; align-items: center; padding: 14px 18px; border-bottom: 1px solid #2a3456; font-weight: 800; }
+  .settings-head button { margin-left: auto; border: 0; background: transparent; color: #9aa7c8; font-size: 16px; }
+  .settings-tabs { display: flex; gap: 6px; padding: 10px 18px 0; }
+  .settings-tabs button { padding: 6px 14px; border: 0; border-radius: 8px 8px 0 0; background: transparent; color: #8e9bbd; font-size: 12px; }
+  .settings-tabs button.on { background: #212c4d; color: #fff; font-weight: 700; }
+  .settings-body { flex: 1; overflow: auto; padding: 14px 18px 22px; }
+  .native-setting { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; margin-bottom: 8px; border: 1px solid #2b3659; border-radius: 10px; background: rgba(255,255,255,.02); font-size: 12px; }
+  .native-setting span { color: #9aa7c8; }
+  @media (max-width: 800px) { .app { grid-template-columns: 1fr; } .side { display: none; } .grid { grid-template-columns: 1fr; } .chat { padding: 16px; } .composer { margin: 0 12px 16px; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><i></i> DeepSeek Harness</div>
+    <h4>工作区</h4>
+    <a class="on" href="#">🐳 大肥鱼跑酷（插件预览）</a>
+    <a href="#">💬 新会话</a>
+    <a href="#">🧩 插件</a>
+    <h4>设置</h4>
+    <a href="#">⚙️ 模型</a>
+    <a href="#" id="open-appearance">🎨 外观</a>
+    <a href="#">⌨️ 快捷键</a>
+  </aside>
+
+  <main class="main">
+    <header><b>大肥鱼跑酷 · 插件预览</b><span class="pill">演示环境 · 非 DSH 运行时</span></header>
+
+    <div class="chat">
+      <div class="card">
+        <h1>🐳 你好，我是大肥鱼</h1>
+        <div class="sub">dsh-fatfish-dino · 一个不干正事但很好玩的 DSH 插件</div>
+        <div class="grid">
+          <div class="tile">
+            <h3>① 悬浮球 · 点击即玩</h3>
+            <p>右下角圆形悬浮球，点一下展开跑酷。空格 / ↑ / 点击跳跃，↓ 下蹲。可拖动换位置，最高分自动存在本机，破纪录会显示表情包。</p>
+          </div>
+          <div class="tile">
+            <h3>② 思考强度 · GPT 式拖动条</h3>
+            <p>下方输入框里的「思考深度」已被替换成胶囊拖动条：蓝紫渐变、燕尾斜切、白色圆点、档位名 + 模型副标题、⟳ 重置。拖动时显示吐槽文案。</p>
+          </div>
+          <div class="tile">
+            <h3>③ 设置 → 外观 · 全局 UI 编辑器</h3>
+            <p>点左侧「🎨 外观」打开 DSH 自带设置面板，插件会把「大肥鱼 · 全局外观」卡片注入到外观页里（不是悬浮球上的按钮）。背景类型支持跟随主题 / 纯色 / 6 组渐变 / 上传图片 / <b>上传或远程视频</b>，另有毛玻璃、面板不透明度、压暗、圆角、辉光、应用范围与自定义 CSS。</p>
+          </div>
+        </div>
+        <div class="src">
+          素材与考据：<a href="https://tieba.baidu.com/p/10940077462" target="_blank" rel="noreferrer">百度贴吧《大肥鱼好可爱》</a> —— 本帖指向的「蓝色大肥鱼 / 鲸鱼娘 DeepSeek」二创梗（帖子回复为「dd」「今天没心思发吧，新模型太区了」，故角色素材按该表情包风格重新绘制）；
+          <a href="https://www.bilibili.com/video/BV1C5YZ69EdX/" target="_blank" rel="noreferrer">B 站 BV1C5YZ69EdX 前 8 秒</a> —— 每 0.5 秒截帧共 16 帧，据此还原 GPT-6 / Codex 的「强度」拖动条。
+        </div>
+      </div>
+      <div class="note">提示：打开游戏后按 <kbd>空格</kbd> 开跑；点击悬浮球收起。右侧的 <kbd>⟳</kbd> 可把思考强度重置为「深度」。</div>
+    </div>
+
+    <div class="composer">
+      <textarea placeholder="给 DeepSeek 发消息…（这个输入框仅用于演示，不会真的发送）"></textarea>
+      <div class="tools" id="tools">
+        <button class="native-effort" id="native-effort" type="button">✧ 思考深度：标准 ▾</button>
+        <button class="ghost" type="button" onclick="return false">＋ 附件</button>
+        <span class="live" id="live"></span>
+        <button class="send" type="button">发送 ↑</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="settings-overlay" id="settings-overlay" hidden>
+  <div class="settings-dialog" role="dialog" aria-modal="true" data-shortcut-modal="settings">
+    <div class="settings-head">设置 <button type="button" id="settings-close" aria-label="关闭设置">✕</button></div>
+    <div class="settings-tabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" class="on">外观</button>
+      <button type="button" role="tab">模型</button>
+      <button type="button" role="tab">快捷键</button>
+    </div>
+    <div role="tabpanel" class="settings-body" id="settings-body">
+      <div class="native-setting"><b>主题</b><span>深色（跟随系统）</span></div>
+      <div class="native-setting"><b>界面密度</b><span>标准</span></div>
+      <div class="native-setting"><b>字体</b><span>系统默认</span></div>
+      <!-- dsh-fatfish-dino injects its Appearance card here -->
+    </div>
+  </div>
+</div>
+
+<script src="../client/art.js"></script>
+<script src="../client/styles.js"></script>
+<script src="../client/dino.js"></script>
+<script src="../client/effort.js"></script>
+<script src="../client/appearance.js"></script>
+<script>
+  (function () {
+    var s = document.createElement('style');
+    s.textContent = globalThis.FFD_CSS;
+    document.head.appendChild(s);
+    var root = document.createElement('div');
+    root.className = 'ffd-root';
+    document.body.appendChild(root);
+    globalThis.FFD_DINO.mount(root);
+    globalThis.FFD_EFFORT.mount(root);
+    globalThis.FFD_APPEARANCE.mount(root);
+
+    var live = document.getElementById('live');
+    function show(l) { live.textContent = '当前强度：' + l.label + '（' + l.value + '）'; }
+    show(globalThis.FFD_EFFORT.get());
+    document.addEventListener('ffd:effort-change', function (e) { show(e.detail); });
+
+    var overlay = document.getElementById('settings-overlay');
+    function openSettings() { overlay.hidden = false; }
+    function closeSettings() { overlay.hidden = true; }
+    document.getElementById('open-appearance').addEventListener('click', function (e) { e.preventDefault(); openSettings(); });
+    document.getElementById('settings-close').addEventListener('click', closeSettings);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) closeSettings(); });
+
+    function waitForCard(cb, tries) {
+      var c = document.querySelector('#settings-body #ffd-appearance-card');
+      if (c) return cb(c);
+      if (tries > 0) setTimeout(function () { waitForCard(cb, tries - 1); }, 120);
+    }
+
+    // ?showcase=dino / effort / play / appearance / glass / video
+    var mode = new URLSearchParams(location.search).get('showcase');
+    if (mode === 'dino' || mode === 'effort' || mode === 'play') {
+      setTimeout(function () {
+        var target = mode === 'effort' ? '.ffd-effort-btn' : '.ffd-ball';
+        var node = document.querySelector(target);
+        if (node) node.click();
+        if (mode === 'play') {
+          var play = document.getElementById('ffd-play');
+          if (play) play.click();
+        }
+      }, 350);
+    }
+    if (mode === 'appearance' || mode === 'glass' || mode === 'video') {
+      setTimeout(function () {
+        openSettings();
+        waitForCard(function (card) {
+          if (mode === 'glass') {
+            card.querySelector('[data-mode="gradient"]').click();
+            card.querySelector('[data-preset="cyber"]').click();
+          }
+          if (mode === 'video') {
+            var input = card.querySelector('.ffd-url');
+            input.value = new URL('../../research/clip.mp4', location.href).href;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            card.querySelector('[data-mode="video"]').click();
+          }
+        }, 25);
+      }, 350);
+    }
+  })();
+</script>
+</body>
+</html>

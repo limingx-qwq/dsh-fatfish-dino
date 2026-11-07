@@ -1,0 +1,49 @@
+{
+  "name": "dsh-fatfish-dino",
+  "version": "1.0.0",
+  "description": "DeepSeek Harness plugin: a floating-ball Fatfish Runner (Chrome dino style) with a persistent high score, plus a GPT/Codex-style reasoning-effort slider that replaces the native thinking-depth picker.",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "client",
+    "assets",
+    "demo",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": []
+    }
+  },
+  "engines": {
+    "dsh": ">=0.2.0 <0.3.0-0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh": ">=0.2.0 <0.3.0-0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "dino",
+    "fatfish",
+    "whale-girl",
+    "reasoning-effort"
+  ],
+  "license": "MIT"
+}
