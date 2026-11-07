@@ -6,24 +6,30 @@
   "main": "index.js",
   "exports": {
     ".": "./index.js",
-    "./client": "./client/index.js",
+    "./client": "./client.js",
     "./package.json": "./package.json"
   },
   "files": [
     "index.js",
+    "client.js",
     "cordis.patch.yml",
     "client",
     "assets",
     "demo",
+    "tools",
     "README.md"
   ],
+  "scripts": {
+    "build:client": "python tools/build-client.py"
+  },
   "dsh": {
+    "manifestVersion": 1,
     "bundle": {
       "patch": "./cordis.patch.yml"
     },
     "client": {
       "platform": "web",
-      "inject": []
+      "immediately": true
     }
   },
   "engines": {

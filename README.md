@@ -96,11 +96,12 @@ dsh plugin --profile web remove dsh-fatfish-dino
 
 ```
 dsh-fatfish-dino/
-├── package.json              # dsh.bundle + dsh.client 声明，exports["./client"]
-├── cordis.patch.yml          # 向 web profile 插入插件行
+├── package.json              # manifestVersion 1 + dsh.bundle + dsh.client(immediately)
+├── client.js                 # ★ 运行时入口：自包含单文件，window.__ModuleLoader__.load(...)
+├── cordis.patch.yml          # 向 profile 插入插件行
 ├── index.js                  # 服务端插件行（无副作用）
-├── client/
-│   ├── index.js              # DSH 浏览器入口：apply(ctx) 挂载两个功能
+├── client/                   # 源码（由 tools/build-client.py 合并成 client.js）
+│   ├── index.js              # 官方 ESM apply(ctx) 形态（备选，适配其他 DSH 版本）
 │   ├── art.js                # 内嵌 WebP data URI（自动生成）
 │   ├── styles.js             # 全部样式，作用域 .ffd-*
 │   ├── dino.js               # 跑酷引擎（Canvas）
@@ -108,11 +109,14 @@ dsh-fatfish-dino/
 │   └── appearance.js         # 注入「设置 → 外观」的全局 UI 编辑器 + 图片/视频背景
 ├── assets/                   # 原始 PNG + 抠图后 RGBA + 压缩 WebP + 预览拼图
 ├── tools/matting.py          # 棋盘格背景抠图脚本（可复现素材处理）
+├── tools/build-client.py     # 把 client/*.js 打包成自包含 client.js
 ├── demo/index.html           # 独立可玩预览，双击即可打开
 └── README.md
 ```
 
-`client/*.js` 都是"副作用脚本 + 全局命名空间"（`FFD_ART` / `FFD_CSS` / `FFD_DINO` / `FFD_EFFORT`），因此同一套代码既能被 DSH 的 ESM 入口 `import`，也能被 demo 用普通 `<script>` 加载，`file://` 下也能跑。
+`client/*.js` 都是"副作用脚本 + 全局命名空间"（`FFD_ART` / `FFD_CSS` / `FFD_DINO` / `FFD_EFFORT` / `FFD_APPEARANCE`），所以既能被 demo 用普通 `<script>` 加载（`file://` 可跑），也能被合并成单文件入口。
+
+**运行时入口以 `client.js` 为准**：本机 DSH Desktop 0.2.1-rc.3 的 Web 客户端用 `window.__ModuleLoader__.load({ id, factory })` 加载插件，factory 返回 `{ apply, inject }`，且入口里的相对 `import` 不会被解析 —— 所以必须自包含。改动 `client/*.js` 后运行 `python tools/build-client.py` 重新生成。`client/index.js` 保留的是官方文档里的 ESM `apply(ctx)` 形态，供其他 DSH 版本使用。
 
 ---
 
