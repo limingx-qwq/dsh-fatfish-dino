@@ -234,7 +234,8 @@
     function applyGlobal() {
       var active = s.enabled && s.mode !== 'theme';
       document.documentElement.classList.toggle('ffd-global', active && s.scope.global);
-      bg.classList.toggle('ffd-active', active);
+      // The fixed background layer is the full-screen one; only show it in global scope.
+      bg.classList.toggle('ffd-active', active && s.scope.global);
       bg.style.setProperty('--ffd-bg-dim', String(s.dim / 100));
       bg.style.setProperty('--ffd-media-blur', s.mediaBlur + 'px');
       mediaBox.style.objectFit = s.fit;
@@ -300,16 +301,29 @@
         ? '16, 22, 38' : '250, 252, 255';
       var alpha = clamp(s.uiAlpha, 10, 100) / 100;
       var blur = s.glass ? s.blur : 0;
+      // DSH paints EVERY layout surface (frame / centerCol / rightbarCol / sidebarCol / bottomRow)
+      // with these body-level tokens. Overriding the tokens is what makes the background truly
+      // full-screen: the opaque frame used to hide the fixed background layer, so it only showed
+      // through the plugin's own floating window. Both tokens are background-only in DSH
+      // (never text colours, never box-shadows), so overriding them is safe.
       uiStyle.textContent =
         'html.ffd-global, html.ffd-global body { background: transparent !important; }' +
-        'html.ffd-global #root, html.ffd-global [data-slot="main"], html.ffd-global [data-slot="sidebar"],' +
-        'html.ffd-global [class*="centerCol"], html.ffd-global [class*="sidebarCol"],' +
-        'html.ffd-global header, html.ffd-global [role="dialog"] {' +
-        ' background-color: rgba(' + tint + ',' + alpha + ') !important;' +
+        'html.ffd-global body {' +
+        ' --dsw-alias-bg-base: rgba(' + tint + ',' + alpha + ') !important;' +
+        ' --dsw-specific-sidebar-fill: rgba(' + tint + ',' + alpha + ') !important;' +
+        '}' +
+        // one backdrop-filter on the app root frosts the whole window in a single pass;
+        // the tint itself comes from the two variables above, so alpha never stacks
+        'html.ffd-global #root {' +
         ' -webkit-backdrop-filter: blur(' + blur + 'px) saturate(' + s.saturate + '%);' +
         ' backdrop-filter: blur(' + blur + 'px) saturate(' + s.saturate + '%);' +
         ' border-radius: ' + s.radius + 'px; }' +
-        'html.ffd-global [role="dialog"] { background-color: rgba(' + tint + ',' + Math.min(1, alpha + .12) + ') !important; }' +
+        // floating surfaces (dialogs, popovers) sit above the app and need their own tint
+        'html.ffd-global [role="dialog"], html.ffd-global [class*="Popover"], html.ffd-global [class*="popover"] {' +
+        ' background-color: rgba(' + tint + ',' + Math.min(1, alpha + .12) + ') !important;' +
+        ' -webkit-backdrop-filter: blur(' + blur + 'px) saturate(' + s.saturate + '%);' +
+        ' backdrop-filter: blur(' + blur + 'px) saturate(' + s.saturate + '%);' +
+        ' border-radius: ' + s.radius + 'px; }' +
         (s.enabled && s.scope.global ? (s.customCss || '') : '');
     }
     function ensureLayers() {

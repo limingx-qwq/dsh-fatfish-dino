@@ -2,7 +2,7 @@
    Plain side-effect imports keep the package build-free: no bundler, no TypeScript, no CSS pipeline. */
 import './art.js'
 import './styles.js'
-import './dino.js'
+import './doors.js'
 import './appearance.js'
 
 export const name = 'fatfish-dino-client'
@@ -21,7 +21,7 @@ export function apply(ctx) {
   document.body.appendChild(root)
 
   const disposers = [
-    globalThis.FFD_DINO.mount(root),
+    globalThis.FFD_DOORS.mount(root),
     globalThis.FFD_APPEARANCE.mount(root)
   ]
 

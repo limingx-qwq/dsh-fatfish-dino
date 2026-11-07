@@ -1,5 +1,5 @@
 /* dsh-fatfish-dino — self-contained DSH web-client entry (generated, do not edit).
-   Sources: client/art.js, styles.js, dino.js, appearance.js, slots.js
+   Sources: client/art.js, styles.js, doors.js, appearance.js, slots.js
    Rebuild with: python tools/build-client.py                                     */
 window.__ModuleLoader__.load({
   id: "dsh-fatfish-dino",
@@ -374,14 +374,22 @@ html.dark .ffd-section {
 }
 `;
 
-    /* ==== dino.js ==== */
-/* Fatfish Dino — a Chrome-dino-style runner using AI-generated "Blue Fatfish / DeepSeek whale girl" art.
-   Plain script: works both as a DSH client module side-effect import and as a <script> in the demo. */
+    /* ==== doors.js ==== */
+/* Fatfish Door Dash — a "choose-the-right-door" endless runner using the AI-generated
+   "Blue Fatfish / DeepSeek whale girl" art.
+
+   Plain script: works both as a DSH client module side-effect import and as a <script> in the demo.
+
+   Gameplay: the Fatfish auto-runs forward through a corridor. Every few seconds a PAIR of
+   doors slides towards you — each door carries a different symbol. The HUD shows the target
+   symbol; steer left (←) or right (→) into the door that MATCHES it. Match = the door opens
+   and you score; mismatch = you slam into it and the run ends. The target changes after every
+   successful door, and the corridor speeds up. */
 (function () {
   'use strict';
 
-  var BEST_KEY = 'ffd.dino.best';
-  var MUTE_KEY = 'ffd.dino.mute';
+  var BEST_KEY = 'ffd.doors.best';
+  var MUTE_KEY = 'ffd.doors.mute';
   var BALL_KEY = 'ffd.ball.pos';
 
   function store(key, value) {
@@ -391,6 +399,7 @@ html.dark .ffd-section {
   }
   function num(value, fallback) { var n = parseInt(value, 10); return isNaN(n) ? fallback : n; }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
   function el(tag, cls, html) {
     var n = document.createElement(tag);
     if (cls) n.className = cls;
@@ -400,9 +409,17 @@ html.dark .ffd-section {
   function pad5(n) { return ('00000' + Math.max(0, Math.floor(n))).slice(-5); }
 
   var THEMES = {
-    light: { sky: '#fbfcff', ink: '#1b2340', line: '#d3d9e8', cloud: '#e7ecf7', pebble: '#c3cbdd', shadow: 'rgba(40,60,110,.10)' },
-    dark: { sky: '#111827', ink: '#e8edff', line: '#3a4562', cloud: '#222d47', pebble: '#465477', shadow: 'rgba(0,0,0,.25)' }
+    light: { sky: '#eef3ff', ink: '#1b2340', line: '#cdd6ec', road: '#d7deef', roadEdge: '#aab5d2', shell: '#ffffff', shellEdge: '#c2cbe4' },
+    dark: { sky: '#111827', ink: '#eef2ff', line: '#3a4562', road: '#2b3551', roadEdge: '#4a5680', shell: '#1b2132', shellEdge: '#39445f' }
   };
+
+  /* door symbols — colour + glyph, so it stays readable without relying on colour alone */
+  var SYMBOLS = [
+    { id: 'up', glyph: '▲', color: '#36d399' },
+    { id: 'cross', glyph: '✕', color: '#ff5874' },
+    { id: 'star', glyph: '★', color: '#5aa9ff' },
+    { id: 'dot', glyph: '●', color: '#ffb545' }
+  ];
 
   function createAudio() {
     var ac = null;
@@ -420,9 +437,9 @@ html.dark .ffd-section {
       } catch (_) { /* audio is optional */ }
     }
     return {
-      jump: function () { tone(520, 0.09, 'square', 0.035); },
-      point: function () { tone(880, 0.12, 'sine', 0.05); setTimeout(function () { tone(1320, 0.14, 'sine', 0.045); }, 90); },
-      hit: function () { tone(180, 0.28, 'sawtooth', 0.055); }
+      turn: function () { tone(620, 0.06, 'square', 0.028); },
+      pass: function () { tone(760, 0.10, 'sine', 0.05); setTimeout(function () { tone(1140, 0.13, 'sine', 0.042); }, 80); },
+      hit: function () { tone(140, 0.32, 'sawtooth', 0.06); }
     };
   }
 
@@ -439,54 +456,48 @@ html.dark .ffd-section {
     var audio = createAudio();
     var imgs = {
       hero: loadImage(ART.hero || ''),
-      obstacle: loadImage(ART.obstacle || ''),
       gameover: loadImage(ART.gameover || ''),
       ball: loadImage(ART.ball || '')
     };
 
-    /* ---------- DOM ---------- */
-    // One shared overlay root for both features; CSS custom properties live here.
+    /* ---------- DOM (same contract as the previous runner: .ffd-ball / .ffd-panel / #ffd-canvas / #ffd-play) ---------- */
     var ownsBox = false;
     var box = null;
     if (host && host.classList && host.classList.contains('ffd-root')) box = host;
     else if (host && host.querySelector) box = host.querySelector('.ffd-root');
-    if (!box) {
-      box = el('div', 'ffd-root');
-      (host || document.body).appendChild(box);
-      ownsBox = true;
-    }
+    if (!box) { box = el('div', 'ffd-root'); (host || document.body).appendChild(box); ownsBox = true; }
 
     var ballWrap = el('div', 'ffd-ball-wrap');
     var ball = el('button', 'ffd-ball');
     ball.type = 'button';
-    ball.title = '大肥鱼跑酷 · 点击开始';
-    ball.setAttribute('aria-label', '打开大肥鱼跑酷小游戏');
+    ball.title = '大肥鱼闯门 · 点击开始';
+    ball.setAttribute('aria-label', '打开大肥鱼闯门小游戏');
     ball.innerHTML = '<img alt="" src="' + (ART.ball || ART.hero || '') + '"><span class="ffd-ball-best">HI ' + pad5(num(store(BEST_KEY), 0)) + '</span>';
     ballWrap.appendChild(ball);
     box.appendChild(ballWrap);
 
     var panel = el('section', 'ffd-panel');
     panel.hidden = true;
-    panel.setAttribute('aria-label', '大肥鱼跑酷');
+    panel.setAttribute('aria-label', '大肥鱼闯门');
     panel.innerHTML =
       '<header class="ffd-head">' +
         '<img class="ffd-logo" alt="" src="' + (ART.ball || '') + '">' +
-        '<div class="ffd-title">大肥鱼跑酷 <small>Fatfish Runner · DeepSeek 娘化二创</small></div>' +
+        '<div class="ffd-title">大肥鱼闯门 <small>Fatfish Door Dash · 选对门才能过</small></div>' +
         '<div class="ffd-scores"><span>得分 <b id="ffd-score">00000</b></span><span>HI <b class="ffd-hi" id="ffd-best">' + pad5(num(store(BEST_KEY), 0)) + '</b></span></div>' +
         '<button class="ffd-icon-btn" id="ffd-mute" type="button" title="音效开关" aria-label="音效开关">' + (store(MUTE_KEY) === '1' ? '🔇' : '🔊') + '</button>' +
         '<button class="ffd-icon-btn" id="ffd-close" type="button" title="收起" aria-label="收起游戏">✕</button>' +
       '</header>' +
       '<div class="ffd-stage">' +
-        '<canvas id="ffd-canvas" tabindex="0" aria-label="跑酷游戏画面，按空格键跳跃"></canvas>' +
+        '<canvas id="ffd-canvas" tabindex="0" aria-label="闯门游戏画面，用左右方向键选择与目标符号一致的门"></canvas>' +
         '<div class="ffd-overlay" id="ffd-overlay">' +
           '<img id="ffd-overlay-img" alt="" src="' + (ART.hero || '') + '">' +
           '<h3 id="ffd-overlay-title">大肥鱼，冲！</h3>' +
-          '<p id="ffd-overlay-desc">跳过「Bug 仙人掌」，别让大肥鱼躺平<br><kbd>空格</kbd> / <kbd>↑</kbd> / <kbd>点击</kbd> 跳跃　<kbd>↓</kbd> 下蹲</p>' +
+          '<p id="ffd-overlay-desc">每对门里只有一扇和左上角<b>目标符号</b>一致<br><kbd>←</kbd> <kbd>→</kbd> 选跑道　<kbd>空格</kbd> 开始　<kbd>Esc</kbd> 退出</p>' +
           '<p class="ffd-newbest" id="ffd-overlay-new" hidden></p>' +
           '<button class="ffd-play" id="ffd-play" type="button">开始游戏</button>' +
         '</div>' +
       '</div>' +
-      '<footer class="ffd-foot"><span>蓝色大肥鱼 · 鲸鱼娘 DeepSeek 同人表情包梗</span><span class="ffd-spacer"></span><span class="ffd-badge" id="ffd-level">普通模式</span><span>最高分自动保存在本机</span></footer>';
+      '<footer class="ffd-foot"><span>蓝色大肥鱼 · 鲸鱼娘 DeepSeek 同人表情包梗</span><span class="ffd-spacer"></span><span class="ffd-badge" id="ffd-level">闯门模式</span><span>最高分自动保存在本机</span></footer>';
     box.appendChild(panel);
 
     var canvas = panel.querySelector('#ffd-canvas');
@@ -499,24 +510,28 @@ html.dark .ffd-section {
     var playBtn = panel.querySelector('#ffd-play');
     var scoreEl = panel.querySelector('#ffd-score');
     var bestEl = panel.querySelector('#ffd-best');
-    var levelEl = panel.querySelector('#ffd-level');
     var muteBtn = panel.querySelector('#ffd-mute');
 
     /* ---------- state ---------- */
     var cw = 880, ch = 240, dpr = 1;
-    var state = 'idle';           // idle | running | over
-    var score = 0, best = num(store(BEST_KEY), 0), distance = 0;
-    var speed = 6, spawnIn = 70, last = 0, raf = 0;
-    var nightAt = 100, flash = 0, isNight = false;
-    var customBackground = false; // when true the canvas sky stays transparent so the glass layer shows through
-    var obstacles = [], clouds = [], pebbles = [];
-    var player = { x: 74, y: 0, w: 54, h: 64, vy: 0, onGround: true, duck: false, bob: 0 };
+    var MAX = 1000;        // far depth (world units)
+    var GAP = 380;         // depth gap between consecutive door pairs
+    var state = 'idle';    // idle | running | over
+    var score = 0, best = num(store(BEST_KEY), 0);
+    var speed = 5.5, last = 0, raf = 0, flash = 0, flashColor = '255,255,255';
+    var customBackground = false;
     var theme = THEMES.light;
+    var gates = [];
+    var lane = 1, laneX = 0, laneTarget = 0;   // lane: 0 left, 1 right
+    var target = SYMBOLS[0];
 
-    for (var i = 0; i < 4; i++) clouds.push({ x: i * 250 + 60, y: 30 + (i % 3) * 28, s: 0.65 + (i % 3) * 0.2 });
-    for (var j = 0; j < 26; j++) pebbles.push({ x: j * 42, y: (j * 37) % 11, s: 1 + (j % 3) * 0.4 });
-
-    function groundY() { return ch - 34; }
+    function geom() {
+      var centerX = cw / 2;
+      var laneOff = cw * 0.21;
+      var hY = ch * 0.38;        // horizon
+      var gY = ch - 14;          // near ground line
+      return { centerX: centerX, laneOff: laneOff, hY: hY, gY: gY, nearDoorW: laneOff * 0.84, nearDoorH: ch * 0.48 };
+    }
     function detectTheme() {
       var h = document.documentElement;
       var dark = h.getAttribute('data-ds-dark-theme') === 'true' ||
@@ -534,130 +549,189 @@ html.dark .ffd-section {
       canvas.width = Math.round(cw * dpr);
       canvas.height = Math.round(ch * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (!player.onGround) return;
-      player.y = groundY() - player.h;
+      var g = geom();
+      laneX = laneTarget = (lane === 0 ? g.centerX - g.laneOff : g.centerX + g.laneOff);
+      if (state !== 'running') render(0);
     }
 
-    /* ---------- drawing helpers ---------- */
-    function drawCloud(c) {
-      ctx.fillStyle = theme.cloud;
+    /* ---------- projection ---------- */
+    function projY(t) { var g = geom(); return g.gY - (g.gY - g.hY) * t; }
+    function laneScreenX(l, t) { var g = geom(); return g.centerX + (l === 0 ? -1 : 1) * g.laneOff * (1 - t); }
+    function scaleAt(t) { return lerp(1.0, 0.12, t); }
+
+    /* ---------- drawing ---------- */
+    function roundRect(x, y, w, h, r) {
       ctx.beginPath();
-      ctx.ellipse(c.x, c.y, 24 * c.s, 9 * c.s, 0, 0, Math.PI * 2);
-      ctx.ellipse(c.x + 16 * c.s, c.y - 5 * c.s, 15 * c.s, 10 * c.s, 0, 0, Math.PI * 2);
-      ctx.ellipse(c.x - 16 * c.s, c.y + 2 * c.s, 13 * c.s, 7 * c.s, 0, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
     }
-    function drawGround() {
-      var gy = groundY();
-      ctx.strokeStyle = theme.line;
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(0, gy + 4); ctx.lineTo(cw, gy + 4); ctx.stroke();
-      ctx.fillStyle = theme.pebble;
-      for (var i = 0; i < pebbles.length; i++) {
-        var p = pebbles[i];
-        var x = ((p.x - distance * 0.55) % (cw + 60) + (cw + 60)) % (cw + 60) - 30;
-        ctx.fillRect(x, gy + 12 + p.y, 3 * p.s, 2);
+    function drawRoad() {
+      var g = geom();
+      if (!customBackground) {
+        ctx.fillStyle = theme.sky;
+        ctx.fillRect(0, g.hY, cw, ch - g.hY);
+      }
+      // corridor floor
+      ctx.fillStyle = theme.road;
+      ctx.beginPath();
+      ctx.moveTo(g.centerX - g.laneOff, g.gY);
+      ctx.lineTo(g.centerX + g.laneOff, g.gY);
+      ctx.lineTo(g.centerX + g.laneOff * 0.14, g.hY);
+      ctx.lineTo(g.centerX - g.laneOff * 0.14, g.hY);
+      ctx.closePath();
+      ctx.fill();
+      // lane edges
+      ctx.strokeStyle = theme.roadEdge; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(g.centerX - g.laneOff, g.gY); ctx.lineTo(g.centerX - g.laneOff * 0.14, g.hY);
+      ctx.moveTo(g.centerX + g.laneOff, g.gY); ctx.lineTo(g.centerX + g.laneOff * 0.14, g.hY);
+      ctx.stroke();
+      // speed rungs
+      ctx.strokeStyle = theme.line; ctx.lineWidth = 1.5;
+      for (var d = 70; d < MAX; d += 95) {
+        var t = d / MAX;
+        var y = projY(t);
+        ctx.globalAlpha = clamp(0.45 - t * 0.4, 0.06, 0.45);
+        ctx.beginPath();
+        ctx.moveTo(laneScreenX(0, t), y); ctx.lineTo(laneScreenX(1, t), y);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    function drawDoor(gate) {
+      var t = clamp(gate.z / MAX, 0, 1);
+      var s = scaleAt(t);
+      var g = geom();
+      var w = g.nearDoorW * s;
+      var h = g.nearDoorH * s;
+      var bottom = projY(t);
+      var top = bottom - h;
+      for (var ln = 0; ln < 2; ln++) {
+        var sym = ln === 0 ? gate.left : gate.right;
+        var dx = laneScreenX(ln, t);
+        var isMatch = sym.id === gate.sym.id;
+        ctx.save();
+        var grad = ctx.createLinearGradient(0, top, 0, bottom);
+        grad.addColorStop(0, hexA(sym.color, 0.30));
+        grad.addColorStop(1, hexA(sym.color, 0.10));
+        ctx.fillStyle = grad;
+        var r = Math.max(2, 8 * s);
+        roundRect(dx - w / 2, top, w, h, r);
+        ctx.fill();
+        ctx.lineWidth = Math.max(1.5, 3 * s);
+        ctx.strokeStyle = sym.color;
+        ctx.stroke();
+        // symbol on the door
+        ctx.fillStyle = sym.color;
+        ctx.font = '700 ' + Math.max(9, 24 * s) + 'px sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(sym.glyph, dx, top + h * 0.42);
+        // the matching door gets a highlight ring
+        if (isMatch) {
+          ctx.strokeStyle = hexA(sym.color, 0.9);
+          ctx.lineWidth = Math.max(1, 2 * s);
+          ctx.beginPath();
+          ctx.arc(dx, top + h * 0.42, Math.max(6, 17 * s), 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
       }
     }
-    function drawBird(o, t) {
-      var flap = Math.sin(t / 7) * 5;
+    function hexA(hex, a) {
+      var h = hex.replace('#', '');
+      var r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+      return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+    }
+    function drawPlayer() {
+      var g = geom();
+      var ph = g.nearDoorH * 0.5, pw = ph * 0.84;
+      var py = g.gY - ph - 3;
       ctx.save();
-      ctx.translate(o.x + o.w / 2, o.y + o.h / 2);
-      ctx.fillStyle = '#4d8bff';
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.ellipse(0, 0, o.w / 2 - 3, o.h / 2 - 2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-o.w / 2 + 4, 0); ctx.lineTo(-o.w / 2 - 8, -7); ctx.lineTo(-o.w / 2 - 8, 7); ctx.closePath();
-      ctx.fill(); ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-2, -2); ctx.quadraticCurveTo(6, -10 - flap, 14, -2); ctx.quadraticCurveTo(5, -3 - flap, -2, -2);
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(9, -4, 3.5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#16254a'; ctx.beginPath(); ctx.arc(10, -4, 1.7, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 4;
+      if (imgs.hero.complete && imgs.hero.naturalWidth) ctx.drawImage(imgs.hero, laneX - pw / 2, py, pw, ph);
+      else { ctx.fillStyle = '#4d7cff'; roundRect(laneX - pw / 2, py, pw, ph, 12); ctx.fill(); }
+      ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = hexA('#7aa0ff', 0.55);
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(laneX, g.gY - 2, pw * 0.68, 5.5, 0, 0, Math.PI * 2); ctx.stroke();
       ctx.restore();
     }
-    function drawScore() {
-      ctx.fillStyle = isNight ? '#e8edff' : theme.ink;
+    function drawHud() {
+      // target chip
+      var r = 13;
+      ctx.save();
+      ctx.fillStyle = theme.shell;
+      roundRect(14, 12, 104, 30, r);
+      ctx.fill();
+      ctx.strokeStyle = theme.shellEdge; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = target.color;
+      ctx.font = '700 16px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(target.glyph, 32, 27);
+      ctx.fillStyle = theme.ink;
+      ctx.font = '600 11px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('目标', 46, 27);
+      ctx.restore();
+      // score
+      ctx.fillStyle = theme.ink;
       ctx.font = '700 15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-      ctx.textAlign = 'right';
-      ctx.fillText('HI ' + pad5(best) + '   ' + pad5(score), cw - 16, 28);
+      ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText('HI ' + pad5(best) + '   ' + pad5(score), cw - 16, 30);
       ctx.textAlign = 'left';
     }
     function render(t) {
       ctx.clearRect(0, 0, cw, ch);
-      if (!customBackground) {
-        ctx.fillStyle = isNight ? (theme === THEMES.dark ? '#0b1120' : '#1b2140') : theme.sky;
-        ctx.fillRect(0, 0, cw, ch);
-      }
-      for (var i = 0; i < clouds.length; i++) drawCloud(clouds[i]);
-      drawGround();
-
-      // player
-      ctx.save();
-      var bob = state === 'running' && player.onGround && !player.duck ? Math.sin(t / 45) * 2 : 0;
-      var ph = player.h;
-      var py = player.onGround ? groundY() - ph + bob : player.y + bob;
-      if (!player.onGround) {
-        ctx.translate(player.x + player.w / 2, py + ph / 2);
-        ctx.rotate(clamp(player.vy * 0.012, -0.16, 0.16));
-        ctx.translate(-(player.x + player.w / 2), -(py + ph / 2));
-      }
-      ctx.shadowColor = theme.shadow; ctx.shadowBlur = 8; ctx.shadowOffsetY = 4;
-      if (imgs.hero.complete && imgs.hero.naturalWidth) ctx.drawImage(imgs.hero, player.x, py, player.w, ph);
-      else { ctx.fillStyle = '#4d7cff'; ctx.fillRect(player.x, py, player.w, ph); }
-      ctx.restore();
-
-      // obstacles
-      for (var k = 0; k < obstacles.length; k++) {
-        var o = obstacles[k];
-        if (o.type === 'bird') drawBird(o, t);
-        else {
-          ctx.save();
-          ctx.shadowColor = theme.shadow; ctx.shadowBlur = 6; ctx.shadowOffsetY = 3;
-          if (imgs.obstacle.complete && imgs.obstacle.naturalWidth) ctx.drawImage(imgs.obstacle, o.x, o.y, o.w, o.h);
-          else { ctx.fillStyle = '#39b56a'; ctx.fillRect(o.x, o.y, o.w, o.h); }
-          ctx.restore();
-        }
-      }
-      drawScore();
+      drawRoad();
+      var sorted = gates.slice().sort(function (a, b) { return b.z - a.z; });
+      for (var i = 0; i < sorted.length; i++) drawDoor(sorted[i]);
+      drawPlayer();
+      drawHud();
       if (flash > 0) {
-        ctx.fillStyle = 'rgba(255,255,255,' + (flash * 0.55).toFixed(3) + ')';
+        ctx.fillStyle = 'rgba(' + flashColor + ',' + (flash * 0.45).toFixed(3) + ')';
         ctx.fillRect(0, 0, cw, ch);
       }
     }
 
     /* ---------- simulation ---------- */
+    function randomSymbol(exclude) {
+      var pool = SYMBOLS.filter(function (s) { return !exclude || s.id !== exclude.id; });
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
     function reset() {
-      score = 0; distance = 0; speed = 6; spawnIn = 62;
-      obstacles = []; flash = 0; isNight = false; nightAt = 100;
-      player.vy = 0; player.onGround = true; player.duck = false;
-      player.h = 64; player.y = groundY() - player.h;
+      score = 0; speed = 5.5; gates = []; flash = 0;
+      target = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+      lane = 1;
+      var g = geom();
+      laneX = laneTarget = g.centerX + g.laneOff;
       scoreEl.textContent = pad5(0);
-      levelEl.textContent = '普通模式';
     }
-    function jump() {
-      if (state !== 'running') { start(); return; }
-      if (!player.onGround) return;
-      player.vy = -11.6;
-      player.onGround = false;
-      audio.jump();
+    function choose(l) {
+      if (state !== 'running') start();
+      lane = (l === 0) ? 0 : 1;
+      var g = geom();
+      laneTarget = (lane === 0 ? g.centerX - g.laneOff : g.centerX + g.laneOff);
+      audio.turn();
     }
-    function spawn() {
-      var canBird = score > 180 && Math.random() < 0.28;
-      if (canBird) {
-        var high = Math.random() < 0.5;
-        obstacles.push({ type: 'bird', x: cw + 20, y: groundY() - (high ? 92 : 58), w: 46, h: 30 });
-      } else {
-        var h = 46 + Math.floor(Math.random() * 3) * 9;
-        var w = 36 + Math.floor(Math.random() * 2) * 12;
-        obstacles.push({ type: 'cactus', x: cw + 20, y: groundY() - h + 4, w: w, h: h });
-      }
-    }
-    function hit(a, b) {
-      var px = a.x + 9, pw = a.w - 18;
-      var py = a.y + 8, ph = a.h - 12;
-      return px < b.x + b.w - 4 && px + pw > b.x + 4 && py < b.y + b.h - 3 && py + ph > b.y + 3;
+    function spawnGate() {
+      // Each pair carries its own "correct" symbol: the matching door shows `sym`,
+      // the other door shows a different one. The HUD target follows the NEAREST pair,
+      // so the displayed target always matches the doors you are about to reach.
+      var sym = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+      var other = randomSymbol(sym);
+      var matchLeft = Math.random() < 0.5;
+      gates.push({
+        z: MAX,
+        sym: sym,
+        left: matchLeft ? sym : other,
+        right: matchLeft ? other : sym,
+        resolved: false
+      });
     }
     function gameOver() {
       state = 'over';
@@ -668,10 +742,10 @@ html.dark .ffd-section {
         store(BEST_KEY, String(best));
         bestEl.textContent = pad5(best);
         ball.querySelector('.ffd-ball-best').textContent = 'HI ' + pad5(best);
-        audio.point();
+        audio.pass();
       }
       overlayImg.src = ART.gameover || ART.hero || '';
-      overlayTitle.textContent = isBest ? '新纪录！大肥鱼起飞了' : '大肥鱼躺平了…';
+      overlayTitle.textContent = isBest ? '新纪录！大肥鱼穿过了所有门' : '大肥鱼撞门了…';
       overlayDesc.innerHTML = '本局得分 <b>' + pad5(score) + '</b>　最高分 <b>' + pad5(best) + '</b><br>按 <kbd>空格</kbd> 或点击按钮再来一局';
       overlayNew.hidden = !isBest;
       overlayNew.textContent = isBest ? '🏆 已刷新本机最高分' : '';
@@ -679,47 +753,41 @@ html.dark .ffd-section {
       overlay.hidden = false;
     }
     function step(t, dt) {
-      distance += speed * dt;
-      score += 0.13 * dt * (speed / 6);
-      speed = Math.min(15.5, 6 + score / 170);
+      score += 0.10 * dt * (speed / 5.5);
+      speed = Math.min(21, 5.5 + score / 90);
       scoreEl.textContent = pad5(score);
 
-      if (Math.floor(score) >= nightAt) {
-        nightAt += 100;
-        flash = 1; isNight = !isNight;
-        audio.point();
-        levelEl.textContent = isNight ? '夜间模式' : '普通模式';
-      }
-      if (flash > 0) flash = Math.max(0, flash - 0.055 * dt);
+      laneX += (laneTarget - laneX) * clamp(0.24 * dt, 0, 1);
 
-      var gy = groundY();
-      player.h = player.duck ? 44 : 64;
-      if (!player.onGround) {
-        player.vy += 0.62 * dt;
-        player.y += player.vy * dt;
-        if (player.y >= gy - player.h) { player.y = gy - player.h; player.vy = 0; player.onGround = true; }
-      } else {
-        player.y = gy - player.h;
-      }
+      // keep even spacing in world depth so faster runs don't bunch the doors up
+      var nearest = gates.length ? Math.min.apply(null, gates.map(function (g) { return g.z; })) : MAX;
+      if (nearest > MAX - GAP) spawnGate();
 
-      for (var i = 0; i < clouds.length; i++) {
-        clouds[i].x -= 0.34 * speed * dt * 0.28;
-        if (clouds[i].x < -50) clouds[i].x = cw + 40 + Math.random() * 90;
+      for (var i = gates.length - 1; i >= 0; i--) {
+        var gate = gates[i];
+        gate.z -= speed * dt;
+        if (!gate.resolved && gate.z <= 0) {
+          gate.resolved = true;
+          var picked = lane === 0 ? gate.left : gate.right;
+          if (picked.id === gate.sym.id) {
+            flash = 1; flashColor = '120,230,170';
+            audio.pass();
+            gates.splice(i, 1);
+          } else {
+            gameOver();
+            return;
+          }
+        } else if (gate.z < -140) {
+          gates.splice(i, 1);
+        }
       }
-
-      spawnIn -= dt;
-      if (spawnIn <= 0) {
-        spawn();
-        spawnIn = clamp(88 - speed * 3.1, 38, 88) + Math.random() * 42;
+      // HUD target always mirrors the nearest upcoming pair of doors.
+      var nearest = null;
+      for (var j = 0; j < gates.length; j++) {
+        if (!nearest || gates[j].z < nearest.z) nearest = gates[j];
       }
-      for (var k = obstacles.length - 1; k >= 0; k--) {
-        var o = obstacles[k];
-        o.x -= speed * dt;
-        if (o.type === 'bird') o.y += Math.sin(t / 110 + k) * 0.35 * dt;
-        if (o.x + o.w < -20) { obstacles.splice(k, 1); continue; }
-        var pbox = { x: player.x, y: player.onGround ? gy - player.h : player.y, w: player.w, h: player.h };
-        if (hit(pbox, o)) { gameOver(); return; }
-      }
+      if (nearest) target = nearest.sym;
+      if (flash > 0) flash = Math.max(0, flash - 0.06 * dt);
       render(t);
     }
     function loop(t) {
@@ -749,23 +817,18 @@ html.dark .ffd-section {
       detectTheme();
       resize();
       render(0);
-      if (state === 'idle' && overlay.hidden) { /* paused mid-game: resume */ state = 'running'; last = 0; raf = requestAnimationFrame(loop); }
+      if (state === 'idle' && overlay.hidden) { state = 'running'; last = 0; raf = requestAnimationFrame(loop); }
     }
-    function close() {
-      pause();
-      panel.hidden = true;
-    }
+    function close() { pause(); panel.hidden = true; }
     function toggle() { panel.hidden ? open() : close(); }
 
-    // Expose instance controls so a host React component (settings section) can drive the game.
-    globalThis.FFD_DINO = globalThis.FFD_DINO || {};
-    globalThis.FFD_DINO.open = open;
-    globalThis.FFD_DINO.close = close;
-    globalThis.FFD_DINO.toggle = toggle;
-    globalThis.FFD_DINO.getBest = function () { return best; };
+    globalThis.FFD_DOORS = globalThis.FFD_DOORS || {};
+    globalThis.FFD_DOORS.open = open;
+    globalThis.FFD_DOORS.close = close;
+    globalThis.FFD_DOORS.toggle = toggle;
+    globalThis.FFD_DOORS.getBest = function () { return best; };
 
-    // Ball: drag to reposition, click to toggle (click also covers keyboard Enter/Space).
-    // Appearance lives in the host's own Settings -> Appearance page, not on the ball.
+    // Ball: drag to reposition, click to toggle.
     var drag = null, suppressUntil = 0;
     function suppressNextClick() { suppressUntil = Date.now() + 600; }
     function applyBallPos(x, y) {
@@ -809,19 +872,13 @@ html.dark .ffd-section {
         var r = ballWrap.getBoundingClientRect();
         store(BALL_KEY, JSON.stringify({ x: r.left, y: r.top }));
         syncPanelToBall();
-        suppressNextClick(); // the browser fires a click right after a drag
+        suppressNextClick();
       }
       drag = null;
       try { ball.releasePointerCapture(e.pointerId); } catch (_) {}
     });
-    ball.addEventListener('pointercancel', function () {
-      drag = null;
-      ball.classList.remove('is-dragging');
-    });
-    ball.addEventListener('click', function () {
-      if (Date.now() < suppressUntil) return;
-      toggle();
-    });
+    ball.addEventListener('pointercancel', function () { drag = null; ball.classList.remove('is-dragging'); });
+    ball.addEventListener('click', function () { if (Date.now() < suppressUntil) return; toggle(); });
 
     panel.querySelector('#ffd-close').addEventListener('click', close);
     muteBtn.addEventListener('click', function () {
@@ -830,30 +887,27 @@ html.dark .ffd-section {
       muteBtn.textContent = muted ? '🔊' : '🔇';
     });
     playBtn.addEventListener('click', function (e) { e.stopPropagation(); start(); });
-    canvas.addEventListener('pointerdown', function (e) { e.preventDefault(); jump(); });
-    overlay.addEventListener('pointerdown', function (e) { if (e.target === overlay) jump(); });
+    canvas.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      choose(e.offsetX < geom().centerX ? 0 : 1);
+    });
+    overlay.addEventListener('pointerdown', function (e) { if (e.target === overlay) start(); });
 
     function typing(t) {
-      return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable || t.getAttribute('role') === 'textbox');
+      if (!t) return false;
+      if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) return true;
+      // the event target may be a non-Element node (e.g. document) — guard the call
+      return typeof t.getAttribute === 'function' && t.getAttribute('role') === 'textbox';
     }
     function onKey(e) {
       if (panel.hidden || typing(e.target)) return;
       var k = e.key;
-      if (k === ' ' || k === 'ArrowUp' || k === 'w' || k === 'W' || k === 'Enter') {
-        e.preventDefault();
-        if (state === 'running') jump(); else start();
-      } else if (k === 'ArrowDown' || k === 's' || k === 'S') {
-        e.preventDefault();
-        if (state === 'running' && player.onGround) player.duck = true;
-      } else if (k === 'Escape') {
-        close();
-      }
-    }
-    function onKeyUp(e) {
-      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') player.duck = false;
+      if (k === 'ArrowLeft' || k === 'a' || k === 'A') { e.preventDefault(); choose(0); }
+      else if (k === 'ArrowRight' || k === 'd' || k === 'D') { e.preventDefault(); choose(1); }
+      else if (k === ' ' || k === 'Enter') { e.preventDefault(); if (state !== 'running') start(); }
+      else if (k === 'Escape') { close(); }
     }
     document.addEventListener('keydown', onKey);
-    document.addEventListener('keyup', onKeyUp);
 
     function onStore(e) {
       if (e.key === BEST_KEY) {
@@ -863,10 +917,7 @@ html.dark .ffd-section {
       }
     }
     window.addEventListener('storage', onStore);
-    window.addEventListener('resize', function () {
-      resize();
-      if (state !== 'running') render(0);
-    });
+    window.addEventListener('resize', function () { resize(); if (state !== 'running') render(0); });
     document.addEventListener('visibilitychange', function () { if (document.hidden) pause(); });
 
     var themeObserver = new MutationObserver(detectTheme);
@@ -880,8 +931,8 @@ html.dark .ffd-section {
     }
     document.addEventListener('ffd:appearance-change', onAppearance);
     if (globalThis.FFD_APPEARANCE && globalThis.FFD_APPEARANCE.get) {
-      var savedAppearance = globalThis.FFD_APPEARANCE.get();
-      customBackground = savedAppearance.bgMode !== 'theme' && savedAppearance.scope.panel !== false;
+      var saved = globalThis.FFD_APPEARANCE.get();
+      customBackground = saved.mode !== 'theme' && saved.scope.panel !== false;
     }
     detectTheme();
     resize();
@@ -890,7 +941,6 @@ html.dark .ffd-section {
     return function dispose() {
       cancelAnimationFrame(raf);
       document.removeEventListener('keydown', onKey);
-      document.removeEventListener('keyup', onKeyUp);
       document.removeEventListener('ffd:appearance-change', onAppearance);
       window.removeEventListener('storage', onStore);
       themeObserver.disconnect();
@@ -901,7 +951,7 @@ html.dark .ffd-section {
     };
   }
 
-  globalThis.FFD_DINO = Object.assign(globalThis.FFD_DINO || {}, { mount: mount });
+  globalThis.FFD_DOORS = Object.assign(globalThis.FFD_DOORS || {}, { mount: mount });
 })();
 
     /* ==== appearance.js ==== */
@@ -1141,7 +1191,8 @@ html.dark .ffd-section {
     function applyGlobal() {
       var active = s.enabled && s.mode !== 'theme';
       document.documentElement.classList.toggle('ffd-global', active && s.scope.global);
-      bg.classList.toggle('ffd-active', active);
+      // The fixed background layer is the full-screen one; only show it in global scope.
+      bg.classList.toggle('ffd-active', active && s.scope.global);
       bg.style.setProperty('--ffd-bg-dim', String(s.dim / 100));
       bg.style.setProperty('--ffd-media-blur', s.mediaBlur + 'px');
       mediaBox.style.objectFit = s.fit;
@@ -1207,16 +1258,29 @@ html.dark .ffd-section {
         ? '16, 22, 38' : '250, 252, 255';
       var alpha = clamp(s.uiAlpha, 10, 100) / 100;
       var blur = s.glass ? s.blur : 0;
+      // DSH paints EVERY layout surface (frame / centerCol / rightbarCol / sidebarCol / bottomRow)
+      // with these body-level tokens. Overriding the tokens is what makes the background truly
+      // full-screen: the opaque frame used to hide the fixed background layer, so it only showed
+      // through the plugin's own floating window. Both tokens are background-only in DSH
+      // (never text colours, never box-shadows), so overriding them is safe.
       uiStyle.textContent =
         'html.ffd-global, html.ffd-global body { background: transparent !important; }' +
-        'html.ffd-global #root, html.ffd-global [data-slot="main"], html.ffd-global [data-slot="sidebar"],' +
-        'html.ffd-global [class*="centerCol"], html.ffd-global [class*="sidebarCol"],' +
-        'html.ffd-global header, html.ffd-global [role="dialog"] {' +
-        ' background-color: rgba(' + tint + ',' + alpha + ') !important;' +
+        'html.ffd-global body {' +
+        ' --dsw-alias-bg-base: rgba(' + tint + ',' + alpha + ') !important;' +
+        ' --dsw-specific-sidebar-fill: rgba(' + tint + ',' + alpha + ') !important;' +
+        '}' +
+        // one backdrop-filter on the app root frosts the whole window in a single pass;
+        // the tint itself comes from the two variables above, so alpha never stacks
+        'html.ffd-global #root {' +
         ' -webkit-backdrop-filter: blur(' + blur + 'px) saturate(' + s.saturate + '%);' +
         ' backdrop-filter: blur(' + blur + 'px) saturate(' + s.saturate + '%);' +
         ' border-radius: ' + s.radius + 'px; }' +
-        'html.ffd-global [role="dialog"] { background-color: rgba(' + tint + ',' + Math.min(1, alpha + .12) + ') !important; }' +
+        // floating surfaces (dialogs, popovers) sit above the app and need their own tint
+        'html.ffd-global [role="dialog"], html.ffd-global [class*="Popover"], html.ffd-global [class*="popover"] {' +
+        ' background-color: rgba(' + tint + ',' + Math.min(1, alpha + .12) + ') !important;' +
+        ' -webkit-backdrop-filter: blur(' + blur + 'px) saturate(' + s.saturate + '%);' +
+        ' backdrop-filter: blur(' + blur + 'px) saturate(' + s.saturate + '%);' +
+        ' border-radius: ' + s.radius + 'px; }' +
         (s.enabled && s.scope.global ? (s.customCss || '') : '');
     }
     function ensureLayers() {
@@ -1526,7 +1590,7 @@ html.dark .ffd-section {
 /* DSH client plugin body, modelled on dsh-codex-effort:
    window.__ModuleLoader__ -> factory -> { apply, inject }
    apply(ctx) registers React components through ctx.slots, and uses ctx.effect
-   for lifecycle cleanup. The heavy DOM engines (canvas runner,
+   for lifecycle cleanup. The heavy DOM engines (canvas door-dash runner,
    global background) stay in their own plain-script modules. */
 (function () {
   'use strict';
@@ -1603,7 +1667,7 @@ html.dark .ffd-section {
     var h = React.createElement;
     return function FatfishAppearanceSection() {
       var hostRef = React.useRef ? React.useRef(null) : { current: null };
-      var best = React.useState(globalThis.FFD_DINO.getBest ? globalThis.FFD_DINO.getBest() : 0)[0];
+      var best = React.useState(globalThis.FFD_DOORS.getBest ? globalThis.FFD_DOORS.getBest() : 0)[0];
       React.useEffect(function () {
         if (!hostRef.current || !globalThis.FFD_APPEARANCE.mountCard) return;
         return globalThis.FFD_APPEARANCE.mountCard(hostRef.current);
@@ -1612,17 +1676,17 @@ html.dark .ffd-section {
 
       return h('div', { className: 'ffd-section' },
         h('div', { className: 'ffd-section-head' },
-          h('h2', null, '🐳 外观与跑酷'),
+          h('h2', null, '🐳 外观与闯门'),
           h('span', null, '自定义背景 · 图片 / 视频 · 毛玻璃 · 渐变')
         ),
         h('div', { className: 'ffd-slot-game' },
           h('div', null,
-            h('b', null, '大肥鱼跑酷'),
-            h('span', { className: 'ffd-slot-sub' }, '最高分 ' + pad5(best) + ' · 空格 / ↑ 跳跃，↓ 下蹲')
+            h('b', null, '大肥鱼闯门'),
+            h('span', { className: 'ffd-slot-sub' }, '最高分 ' + pad5(best) + ' · ← → 选择跑道，选错即结束')
           ),
           h('button', {
             type: 'button',
-            onClick: function () { if (globalThis.FFD_DINO.open) globalThis.FFD_DINO.open(); }
+            onClick: function () { if (globalThis.FFD_DOORS.open) globalThis.FFD_DOORS.open(); }
           }, '开始游戏 ▶')
         ),
         h('div', Object.assign({ className: 'ffd-slot-host' }, refProp))
@@ -1658,7 +1722,7 @@ html.dark .ffd-section {
       document.body.appendChild(root);
 
       var disposers = [
-        globalThis.FFD_DINO.mount(root),
+        globalThis.FFD_DOORS.mount(root),
         globalThis.FFD_APPEARANCE.mount(root)
       ];
       function cleanupUI() {
@@ -1708,7 +1772,7 @@ html.dark .ffd-section {
         ctx.slots.inject(UTILITY_SLOT, function () {
           return ctx.slots.register({ name: UTILITY_SLOT, id: PACKAGE_ID + ':runner', order: 60 },
             createSmallButton(React, '🐳 跑酷', function () {
-              if (globalThis.FFD_DINO.toggle) globalThis.FFD_DINO.toggle();
+              if (globalThis.FFD_DOORS.toggle) globalThis.FFD_DOORS.toggle();
             }));
         });
       } catch (_) { /* slot unavailable — harmless */ }

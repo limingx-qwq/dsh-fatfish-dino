@@ -10,10 +10,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CLIENT = ROOT / 'client'
-SOURCES = ['art.js', 'styles.js', 'dino.js', 'appearance.js', 'slots.js']
+SOURCES = ['art.js', 'styles.js', 'doors.js', 'appearance.js', 'slots.js']
 
 HEADER = '''/* dsh-fatfish-dino — self-contained DSH web-client entry (generated, do not edit).
-   Sources: client/art.js, styles.js, dino.js, appearance.js, slots.js
+   Sources: client/art.js, styles.js, doors.js, appearance.js, slots.js
    Rebuild with: python tools/build-client.py                                     */
 window.__ModuleLoader__.load({
   id: "dsh-fatfish-dino",

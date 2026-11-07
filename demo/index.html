@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fatfish Dino · DSH 插件预览</title>
+<title>Fatfish Door Dash · DSH 插件预览</title>
 <style>
   * { box-sizing: border-box; }
   :root { color-scheme: dark; }
@@ -59,6 +59,13 @@
   .settings-body { flex: 1; overflow: auto; padding: 14px 18px 22px; }
   .native-setting { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; margin-bottom: 8px; border: 1px solid #2b3659; border-radius: 10px; background: rgba(255,255,255,.02); font-size: 12px; }
   .native-setting span { color: #9aa7c8; }
+  /* 全局背景：插件把 html.ffd-global 打开后，预览页自身也要让位，
+     这样才能看到「背景铺满整个窗口」而不是只从插件自己的面板里透出来。 */
+  html.ffd-global, html.ffd-global body { background: transparent !important; }
+  html.ffd-global .app { background: transparent !important; }
+  html.ffd-global .side { background: rgba(12, 17, 33, .55) !important; backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); }
+  html.ffd-global .card, html.ffd-global .composer { background: rgba(19, 26, 48, .72) !important; backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); }
+  html.ffd-global header { background: transparent !important; }
   @media (max-width: 800px) { .app { grid-template-columns: 1fr; } .side { display: none; } .grid { grid-template-columns: 1fr; } .chat { padding: 16px; } .composer { margin: 0 12px 16px; } }
 </style>
 </head>
@@ -67,7 +74,7 @@
   <aside class="side">
     <div class="brand"><i></i> DeepSeek Harness</div>
     <h4>工作区</h4>
-    <a class="on" href="#">🐳 大肥鱼跑酷（插件预览）</a>
+    <a class="on" href="#">🐳 大肥鱼闯门（插件预览）</a>
     <a href="#">💬 新会话</a>
     <a href="#">🧩 插件</a>
     <h4>设置</h4>
@@ -77,7 +84,7 @@
   </aside>
 
   <main class="main">
-    <header><b>大肥鱼跑酷 · 插件预览</b><span class="pill">演示环境 · 非 DSH 运行时</span></header>
+    <header><b>大肥鱼闯门 · 插件预览</b><span class="pill">演示环境 · 非 DSH 运行时</span></header>
 
     <div class="chat">
       <div class="card">
@@ -86,11 +93,11 @@
         <div class="grid">
           <div class="tile">
             <h3>① 悬浮球 · 点击即玩</h3>
-            <p>右下角圆形悬浮球，点一下展开跑酷。空格 / ↑ / 点击跳跃，↓ 下蹲。可拖动换位置，最高分自动存在本机，破纪录会显示表情包。</p>
+            <p>右下角圆形悬浮球，点一下展开闯门游戏。每对门里只有一扇和左上角<b>目标符号</b>一致，<kbd>←</kbd> <kbd>→</kbd> 选跑道，选错就撞门。最高分自动存在本机，破纪录会显示表情包。</p>
           </div>
           <div class="tile">
             <h3>② 左栏「外观」选项 · 全局 UI 编辑器</h3>
-            <p>按 <code>dsh-codex-effort</code> 的写法，插件用 <code>ctx.slots.inject('settings.section')</code> 在 DSH <b>设置左栏新增一个「外观」分区</b>。分区里有跑酷游戏卡片（最高分 / 开始按钮）和完整的外观编辑器：跟随主题 / 纯色 / 6 组渐变 / 上传图片 / <b>上传或远程视频</b>，以及毛玻璃、面板不透明度、压暗、圆角、辉光、应用范围与自定义 CSS。</p>
+            <p>按 <code>dsh-codex-effort</code> 的写法，插件用 <code>ctx.slots.inject('settings.section')</code> 在 DSH <b>设置左栏新增一个「外观」分区</b>。分区里有闯门游戏卡片（最高分 / 开始按钮）和完整的外观编辑器：跟随主题 / 纯色 / 6 组渐变 / 上传图片 / <b>上传或远程视频</b>，以及毛玻璃、面板不透明度、压暗、圆角、辉光、应用范围与自定义 CSS。背景是<b>铺满整个窗口</b>的，不只是插件自己的面板。</p>
           </div>
         </div>
         <div class="src">
@@ -98,15 +105,15 @@
           <a href="https://www.bilibili.com/video/BV1C5YZ69EdX/" target="_blank" rel="noreferrer">B 站 BV1C5YZ69EdX 前 8 秒</a> —— 每 0.5 秒截帧共 16 帧，据此还原 GPT-6 / Codex 的「强度」拖动条。
         </div>
       </div>
-      <div class="note">提示：打开游戏后按 <kbd>空格</kbd> 开跑；点击悬浮球收起。点左侧「🎨 外观」可打开全局 UI 编辑器。</div>
+      <div class="note">提示：打开游戏后按 <kbd>空格</kbd> 开跑；<kbd>←</kbd> <kbd>→</kbd> 选择与目标符号一致的门。点击悬浮球收起。点左侧「🎨 外观」可打开全局 UI 编辑器。</div>
 
       <!-- Simulates the host rendering our `settings.section` React component -->
       <div id="appearance-view" class="ffd-section" hidden>
         <div class="ffd-section-head">
-          <h2>🐳 外观与跑酷</h2><span>自定义背景 · 图片 / 视频 · 毛玻璃 · 渐变</span>
+          <h2>🐳 外观与闯门</h2><span>自定义背景 · 图片 / 视频 · 毛玻璃 · 渐变</span>
         </div>
         <div class="ffd-slot-game">
-          <div><b>大肥鱼跑酷</b><span class="ffd-slot-sub" id="demo-best">最高分 00000 · 空格 / ↑ 跳跃，↓ 下蹲</span></div>
+          <div><b>大肥鱼闯门</b><span class="ffd-slot-sub" id="demo-best">最高分 00000 · ← → 选择跑道，选错即结束</span></div>
           <button type="button" id="demo-play">开始游戏 ▶</button>
         </div>
         <div class="ffd-slot-host" id="appearance-host"></div>
@@ -125,7 +132,7 @@
 
 <script src="../client/art.js"></script>
 <script src="../client/styles.js"></script>
-<script src="../client/dino.js"></script>
+<script src="../client/doors.js"></script>
 <script src="../client/appearance.js"></script>
 <script>
   (function () {
@@ -135,7 +142,7 @@
     var root = document.createElement('div');
     root.className = 'ffd-root';
     document.body.appendChild(root);
-    globalThis.FFD_DINO.mount(root);
+    globalThis.FFD_DOORS.mount(root);
     globalThis.FFD_APPEARANCE.mount(root);
 
     // Simulate what the DSH host does for our `settings.section` React component:
@@ -153,7 +160,7 @@
       intro.hidden = true; note.hidden = true; view.hidden = false;
       navLink.classList.add('on');
       document.getElementById('demo-best').textContent =
-        '最高分 ' + pad(globalThis.FFD_DINO.getBest()) + ' · 空格 / ↑ 跳跃，↓ 下蹲';
+        '最高分 ' + pad(globalThis.FFD_DOORS.getBest()) + ' · ← → 选择跑道，选错即结束';
       if (!mountedDispose) mountedDispose = globalThis.FFD_APPEARANCE.mountCard(hostEl);
     }
     function closeAppearanceView() {
@@ -165,7 +172,7 @@
       e.preventDefault();
       view.hidden ? openAppearanceView() : closeAppearanceView();
     });
-    document.getElementById('demo-play').addEventListener('click', function () { globalThis.FFD_DINO.open(); });
+    document.getElementById('demo-play').addEventListener('click', function () { globalThis.FFD_DOORS.open(); });
     document.querySelectorAll('.side a:not(#open-appearance)').forEach(function (a) {
       a.addEventListener('click', function (e) { e.preventDefault(); closeAppearanceView(); });
     });
@@ -176,9 +183,9 @@
       if (tries > 0) setTimeout(function () { waitForCard(cb, tries - 1); }, 120);
     }
 
-    // ?showcase=dino / play / appearance / glass / video
+    // ?showcase=doors / play / appearance / glass / video
     var mode = new URLSearchParams(location.search).get('showcase');
-    if (mode === 'dino' || mode === 'play') {
+    if (mode === 'doors' || mode === 'play' || mode === 'dino') {
       setTimeout(function () {
         var node = document.querySelector('.ffd-ball');
         if (node) node.click();

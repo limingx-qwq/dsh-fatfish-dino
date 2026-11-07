@@ -1,7 +1,7 @@
 /* DSH client plugin body, modelled on dsh-codex-effort:
    window.__ModuleLoader__ -> factory -> { apply, inject }
    apply(ctx) registers React components through ctx.slots, and uses ctx.effect
-   for lifecycle cleanup. The heavy DOM engines (canvas runner,
+   for lifecycle cleanup. The heavy DOM engines (canvas door-dash runner,
    global background) stay in their own plain-script modules. */
 (function () {
   'use strict';
@@ -78,7 +78,7 @@
     var h = React.createElement;
     return function FatfishAppearanceSection() {
       var hostRef = React.useRef ? React.useRef(null) : { current: null };
-      var best = React.useState(globalThis.FFD_DINO.getBest ? globalThis.FFD_DINO.getBest() : 0)[0];
+      var best = React.useState(globalThis.FFD_DOORS.getBest ? globalThis.FFD_DOORS.getBest() : 0)[0];
       React.useEffect(function () {
         if (!hostRef.current || !globalThis.FFD_APPEARANCE.mountCard) return;
         return globalThis.FFD_APPEARANCE.mountCard(hostRef.current);
@@ -87,17 +87,17 @@
 
       return h('div', { className: 'ffd-section' },
         h('div', { className: 'ffd-section-head' },
-          h('h2', null, '🐳 外观与跑酷'),
+          h('h2', null, '🐳 外观与闯门'),
           h('span', null, '自定义背景 · 图片 / 视频 · 毛玻璃 · 渐变')
         ),
         h('div', { className: 'ffd-slot-game' },
           h('div', null,
-            h('b', null, '大肥鱼跑酷'),
-            h('span', { className: 'ffd-slot-sub' }, '最高分 ' + pad5(best) + ' · 空格 / ↑ 跳跃，↓ 下蹲')
+            h('b', null, '大肥鱼闯门'),
+            h('span', { className: 'ffd-slot-sub' }, '最高分 ' + pad5(best) + ' · ← → 选择跑道，选错即结束')
           ),
           h('button', {
             type: 'button',
-            onClick: function () { if (globalThis.FFD_DINO.open) globalThis.FFD_DINO.open(); }
+            onClick: function () { if (globalThis.FFD_DOORS.open) globalThis.FFD_DOORS.open(); }
           }, '开始游戏 ▶')
         ),
         h('div', Object.assign({ className: 'ffd-slot-host' }, refProp))
@@ -133,7 +133,7 @@
       document.body.appendChild(root);
 
       var disposers = [
-        globalThis.FFD_DINO.mount(root),
+        globalThis.FFD_DOORS.mount(root),
         globalThis.FFD_APPEARANCE.mount(root)
       ];
       function cleanupUI() {
@@ -183,7 +183,7 @@
         ctx.slots.inject(UTILITY_SLOT, function () {
           return ctx.slots.register({ name: UTILITY_SLOT, id: PACKAGE_ID + ':runner', order: 60 },
             createSmallButton(React, '🐳 跑酷', function () {
-              if (globalThis.FFD_DINO.toggle) globalThis.FFD_DINO.toggle();
+              if (globalThis.FFD_DOORS.toggle) globalThis.FFD_DOORS.toggle();
             }));
         });
       } catch (_) { /* slot unavailable — harmless */ }
