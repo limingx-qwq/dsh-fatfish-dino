@@ -112,6 +112,7 @@
 
     var s = load();
     var objectUrl = '';
+    var autoInject = true; // slots mode mounts the card into a host-provided React container instead
 
     /* ---------- global background layer (behind the whole DSH UI) ---------- */
     var bg = el('div', 'ffd-global-bg');
@@ -510,6 +511,7 @@
       return hostNode;
     }
     function injectCard() {
+      if (!autoInject) return;
       var hostNode = findSettingsHost();
       if (!hostNode) { if (cardHost.isConnected) cardHost.remove(); return; }
       var target = pickInsertTarget(hostNode);
@@ -552,6 +554,32 @@
     globalThis.FFD_APPEARANCE.get = load;
     globalThis.FFD_APPEARANCE.defaults = function () { return clone(DEFAULTS); };
     globalThis.FFD_APPEARANCE.mount = mount;
+
+    // slots mode: the host renders our React component and gives us a container.
+    // Turn off the DOM-sniffing injector so the card is owned by React instead.
+    globalThis.FFD_APPEARANCE.setAutoInject = function (on) {
+      autoInject = !!on;
+      clearTimeout(scanTimer);
+      if (autoInject) {
+        observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'style', 'class', 'aria-hidden'] });
+        injectCard();
+      } else {
+        observer.disconnect();
+        if (cardHost.isConnected && cardHost.parentElement &&
+            !cardHost.parentElement.classList.contains('ffd-slot-host')) cardHost.remove();
+      }
+    };
+    globalThis.FFD_APPEARANCE.mountCard = function (container) {
+      if (!container) return function () {};
+      autoInject = false;
+      observer.disconnect();
+      container.appendChild(cardHost);
+      syncRoot(card);
+      apply();
+      return function () {
+        if (cardHost.parentElement === container) container.removeChild(cardHost);
+      };
+    };
 
     // Restore an uploaded blob after reload.
     if (s.hasMedia) {

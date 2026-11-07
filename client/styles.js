@@ -418,6 +418,41 @@ globalThis.FFD_CSS = String.raw`
 .ffd-global-scrim { background: rgba(4, 7, 18, var(--ffd-bg-dim, .25)); }
 html.ffd-global { background: transparent !important; }
 
+/* ---------------- host slot surfaces (rendered by React INSIDE DSH, outside .ffd-root) ---------------- */
+.ffd-section {
+  --ffd-ink: #1b2340; --ffd-sub: #6b7590; --ffd-card: #ffffff;
+  --ffd-line: #e8ecf6; --ffd-blue: #2f6bff; --ffd-violet: #8b46ef;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--ffd-ink); padding: 4px 0 24px;
+}
+html[data-ds-dark-theme="true"] .ffd-section,
+html[data-theme="dark"] .ffd-section,
+html.dark .ffd-section {
+  --ffd-ink: #eef2ff; --ffd-sub: #98a3bf; --ffd-card: #1b2132; --ffd-line: #303951;
+}
+.ffd-section-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.ffd-section-head h2 { margin: 0; font-size: 16px; font-weight: 800; }
+.ffd-section-head span { font-size: 11px; color: var(--ffd-sub); }
+.ffd-slot-game {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 14px; margin-bottom: 14px;
+  border: 1px solid var(--ffd-line); border-radius: 14px; background: var(--ffd-card);
+}
+.ffd-slot-game b { display: block; font-size: 13px; }
+.ffd-slot-sub { display: block; font-size: 11px; color: var(--ffd-sub); margin-top: 2px; }
+.ffd-slot-game button {
+  margin-left: auto; padding: 8px 16px; border: 0; border-radius: 999px;
+  background: linear-gradient(100deg, var(--ffd-blue), var(--ffd-violet));
+  color: #fff; font-size: 12px; font-weight: 800; white-space: nowrap; cursor: pointer;
+}
+.ffd-slot-game button:hover { filter: brightness(1.1); }
+.ffd-slot-host { display: block; }
+.ffd-quick-action {
+  padding: 5px 10px; border: 1px solid var(--ffd-line, #3a4562); border-radius: 9px;
+  background: transparent; color: inherit; font-size: 11px; cursor: pointer;
+}
+.ffd-quick-action:hover { background: rgba(127, 150, 220, .14); }
+
 @media (max-width: 640px) {
   .ffd-panel { right: 12px; left: 12px; bottom: 92px; width: auto; }
   .ffd-stage canvas { height: 200px; }

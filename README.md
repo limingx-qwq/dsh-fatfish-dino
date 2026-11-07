@@ -40,9 +40,9 @@ document.addEventListener('ffd:effort-change', (e) => {
 
 若原生控件是 `<select>`，插件会同步它的 `selectedIndex` 并派发 `change`；其他类型的原生控件只做视觉替换，实际模型参数请通过上面的事件接入你的适配器。
 
-**③ 设置 → 外观 · 全局 UI 编辑器**
+**③ 设置左栏 · 外观分区（全局 UI 编辑器）**
 
-这一块**不在悬浮球上**（没有齿轮、没有右键菜单、游戏面板也没有设置按钮），而是把「大肥鱼 · 全局外观」卡片注入 DSH 自带设置对话框的**外观 tab**（`[role=tabpanel]` / 内容滚动区），和「主题 / 界面密度」等原生设置项排在一起。它编辑的是**整个 DSH 界面**：
+按 `dsh-codex-effort` 的写法，用 `ctx.slots.inject('settings.section', ...)` 把插件注册成 DSH **设置面板左栏的一个独立分区「🎨 外观」**，和「模型」「快捷键」等原生分区并列。点开该分区即可看到「大肥鱼 · 全局外观」卡片，以及「大肥鱼跑酷」的**开始游戏**按钮（不用开悬浮球也能玩）。它编辑的是**整个 DSH 界面**：
 
 - **背景类型**：跟随主题 / 纯色 / 渐变（6 组预设 + 自定义起止色与角度）/ **上传图片** / **上传或远程视频**
 - **媒体**：`image/*`、`video/*` 本地上传；图片自动压到 1920px WebP，视频原样保存；也支持填远程 `.mp4` / `.jpg` URL。二进制存 **IndexedDB**（`ffd-appearance` / `media`），配置本身存 `localStorage['ffd.appearance.v2']`，刷新后自动恢复 blob URL。视频可设播放速度、静音、循环、暂停，以及 cover/contain、位置和媒体模糊
@@ -52,7 +52,7 @@ document.addEventListener('ffd:effort-change', (e) => {
 - **自定义 CSS**：直接写针对你自己 DSH 版本的选择器，用来精确覆盖没被通用规则命中的容器
 - 实时预览、`恢复默认`、`导出配置`（复制 JSON）、`导入配置`；卡片右上角 ✕ 折叠
 
-全局背景层用 `position:fixed; z-index:-1`，配合注入的 `html.ffd-global` 规则把宿主面板改成半透明。不同 DSH 构建的 DOM 差异较大，通用选择器覆盖不到的地方请用「自定义 CSS」补；插件自带 `FFD_APPEARANCE.open()` 浮动面板作为设置页不可用时的兜底。
+全局背景层用 `position:fixed; z-index:-1`，配合注入的 `html.ffd-global` 规则把宿主面板改成半透明。不同 DSH 构建的 DOM 差异较大，通用选择器覆盖不到的地方请用「自定义 CSS」补；若宿主没有 `settings.section` 槽位（旧版 DSH），插件会自动降级为 `FFD_APPEARANCE.open()` 浮动面板，功能不变。
 
 ---
 
@@ -106,7 +106,8 @@ dsh-fatfish-dino/
 │   ├── styles.js             # 全部样式，作用域 .ffd-*
 │   ├── dino.js               # 跑酷引擎（Canvas）
 │   ├── effort.js             # 强度拖动条 + 原生控件替换
-│   └── appearance.js         # 注入「设置 → 外观」的全局 UI 编辑器 + 图片/视频背景
+│   ├── appearance.js         # 全局 UI 编辑器 + 图片/视频背景（含 mountCard 供槽位挂载）
+│   └── slots.js              # ★ DSH 0.2.x 槽位注册（仿 dsh-codex-effort）：settings.section 左栏分区 + 快捷按钮
 ├── assets/                   # 原始 PNG + 抠图后 RGBA + 压缩 WebP + 预览拼图
 ├── tools/matting.py          # 棋盘格背景抠图脚本（可复现素材处理）
 ├── tools/build-client.py     # 把 client/*.js 打包成自包含 client.js
@@ -116,13 +117,15 @@ dsh-fatfish-dino/
 
 `client/*.js` 都是"副作用脚本 + 全局命名空间"（`FFD_ART` / `FFD_CSS` / `FFD_DINO` / `FFD_EFFORT` / `FFD_APPEARANCE`），所以既能被 demo 用普通 `<script>` 加载（`file://` 可跑），也能被合并成单文件入口。
 
-**运行时入口以 `client.js` 为准**：本机 DSH Desktop 0.2.1-rc.3 的 Web 客户端用 `window.__ModuleLoader__.load({ id, factory })` 加载插件，factory 返回 `{ apply, inject }`，且入口里的相对 `import` 不会被解析 —— 所以必须自包含。改动 `client/*.js` 后运行 `python tools/build-client.py` 重新生成。`client/index.js` 保留的是官方文档里的 ESM `apply(ctx)` 形态，供其他 DSH 版本使用。
+**运行时入口以 `client.js` 为准**：本机 DSH Desktop 0.2.1-rc.3 的 Web 客户端用 `window.__ModuleLoader__.load({ id, factory })` 加载插件，factory 返回 `{ apply, inject }`，且入口里的相对 `import` 不会被解析 —— 所以必须自包含。改动 `client/*.js` 后运行 `python tools/build-client.py` 重新生成。
+
+`client/slots.js` 是 DSH 0.2.x 的接入层，仿 `dsh-codex-effort`：在 `apply(ctx)` 里用 `ctx.slots.inject('settings.section', ...)` 注册 React 组件（分区头部「🎨 外观」+「大肥鱼跑酷」开始按钮 + 外观卡片挂载点），并额外在左栏底部 / 会话头部注入快捷按钮。`ctx.effect` 负责卸载清理。找不到 `settings.section` 槽位或没有 React 时，自动降级为「悬浮球外观浮层」。`client/index.js` 保留的是官方文档里的 ESM `apply(ctx)` 形态，供其他 DSH 版本使用。
 
 ---
 
 ## 独立预览
 
-直接用浏览器打开 `demo/index.html`（无需安装 DSH、无需起服务器）。页面模拟了 DSH 的深色界面：**点左侧「🎨 外观」会打开模拟的 DSH 设置对话框**，可以看到插件卡片被注入到「外观」tab 的三个原生设置项下面。另有会被替换的「思考深度」按钮、实时档位指示器和右下角悬浮球。
+直接用浏览器打开 `demo/index.html`（无需安装 DSH、无需起服务器）。页面模拟了 DSH 的深色界面：**点左侧栏「🎨 外观」分区**，即可看到「大肥鱼 · 全局外观」卡片与「大肥鱼跑酷」开始按钮（这正对应真实 DSH 里 `settings.section` 槽位注入的左栏分区）。另有会被替换的「思考深度」按钮、实时档位指示器和右下角悬浮球。
 
 URL 参数：`?showcase=dino` / `effort` / `play` 展开游戏面板、强度浮层或直接开跑；`?showcase=appearance` / `glass` / `video` 打开外观设置页，其中 `glass` 自动应用赛博渐变、`video` 用工作区里的 `research/clip.mp4` 演示视频背景。
 
@@ -140,7 +143,7 @@ npx serve .
 ## 兼容性与边界
 
 - 面向 DSH `>=0.2.0 <0.3.0`（`engines.dsh`）。若你的版本被拒绝，按需放宽 `package.json` 的范围。
-- 不声明 `inject` 依赖，避免因宿主缺少 UI 服务而一直停在 PENDING；原生控件靠选择器嗅探，不同 DSH 构建的 DOM 差异会走降级药丸。
+- 客户端入口声明 `inject: ["slots"]`，让加载器把 `ctx.slots` 注入进来；若宿主没有 `slots` 服务，插件会走降级路径（DOM 嗅探 / 悬浮面版）而不是停在 PENDING。原生控件靠选择器嗅探，不同 DSH 构建的 DOM 差异会走降级药丸。
 - 所有 localStorage 读写均带 `try/catch`，隐私模式下不会抛错，只是无法持久化。
 - 游戏 canvas 用 `ResizeObserver` 适配容器宽度，支持高 DPI；窄屏面板自动改为左右贴边。
 - 插件只注入 DOM / 样式 / 事件，不请求网络、不读取会话内容、不修改模型调用。

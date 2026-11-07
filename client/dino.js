@@ -380,6 +380,13 @@
     }
     function toggle() { panel.hidden ? open() : close(); }
 
+    // Expose instance controls so a host React component (settings section) can drive the game.
+    globalThis.FFD_DINO = globalThis.FFD_DINO || {};
+    globalThis.FFD_DINO.open = open;
+    globalThis.FFD_DINO.close = close;
+    globalThis.FFD_DINO.toggle = toggle;
+    globalThis.FFD_DINO.getBest = function () { return best; };
+
     // Ball: drag to reposition, click to toggle (click also covers keyboard Enter/Space).
     // Appearance lives in the host's own Settings -> Appearance page, not on the ball.
     var drag = null, suppressUntil = 0;
@@ -517,5 +524,5 @@
     };
   }
 
-  globalThis.FFD_DINO = { mount: mount };
+  globalThis.FFD_DINO = Object.assign(globalThis.FFD_DINO || {}, { mount: mount });
 })();

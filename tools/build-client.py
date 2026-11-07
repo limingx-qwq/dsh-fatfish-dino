@@ -10,10 +10,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CLIENT = ROOT / 'client'
-SOURCES = ['art.js', 'styles.js', 'dino.js', 'effort.js', 'appearance.js']
+SOURCES = ['art.js', 'styles.js', 'dino.js', 'effort.js', 'appearance.js', 'slots.js']
 
 HEADER = '''/* dsh-fatfish-dino — self-contained DSH web-client entry (generated, do not edit).
-   Sources: client/art.js, styles.js, dino.js, effort.js, appearance.js
+   Sources: client/art.js, styles.js, dino.js, effort.js, appearance.js, slots.js
    Rebuild with: python tools/build-client.py                                     */
 window.__ModuleLoader__.load({
   id: "dsh-fatfish-dino",
@@ -24,42 +24,9 @@ window.__ModuleLoader__.load({
 '''
 
 FOOTER = '''
-    /* ---------------- plugin body ---------------- */
-    var inject = [];
-
-    function apply(ctx) {
-      if (typeof document === 'undefined') return;
-      if (document.getElementById('ffd-styles')) return; // HMR / duplicate row
-
-      var style = document.createElement('style');
-      style.id = 'ffd-styles';
-      style.textContent = globalThis.FFD_CSS || '';
-      document.head.appendChild(style);
-
-      var root = document.createElement('div');
-      root.className = 'ffd-root';
-      document.body.appendChild(root);
-
-      var disposers = [
-        globalThis.FFD_DINO.mount(root),
-        globalThis.FFD_EFFORT.mount(root),
-        globalThis.FFD_APPEARANCE.mount(root)
-      ];
-
-      function cleanup() {
-        disposers.forEach(function (fn) { try { if (typeof fn === 'function') fn(); } catch (_) {} });
-        root.remove();
-        style.remove();
-      }
-      if (ctx && typeof ctx.effect === 'function') {
-        ctx.effect(function () { return cleanup; }, 'dsh-fatfish-dino:ui');
-      } else {
-        window.addEventListener('pagehide', cleanup, { once: true });
-      }
-      return cleanup;
-    }
-
-    module.exports = { apply: apply, inject: inject };
+    /* ---------------- plugin body (ctx.slots / React, like dsh-codex-effort) ---------------- */
+    var plugin = globalThis.FFD_SLOTS.create(require);
+    module.exports = { apply: plugin.apply, inject: plugin.inject };
     return module.exports;
   }
 });
