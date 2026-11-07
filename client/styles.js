@@ -141,112 +141,6 @@ globalThis.FFD_CSS = String.raw`
   color: var(--ffd-ink); font-size: 10px; font-weight: 700;
 }
 
-/* ---------------- effort: GPT / Codex style slider ---------------- */
-.ffd-native-muted { opacity: 0 !important; pointer-events: none !important; }
-.ffd-effort-anchor-host { position: relative !important; }
-
-.ffd-effort-btn {
-  position: absolute; z-index: 3;
-  display: inline-flex; align-items: center; gap: 7px;
-  height: 100%; max-height: 34px; padding: 0 11px;
-  border: 1px solid var(--ffd-line); border-radius: 999px;
-  background: var(--ffd-card); color: var(--ffd-ink);
-  font-size: 12px; font-weight: 600; white-space: nowrap;
-  box-shadow: 0 1px 3px rgba(20, 30, 70, .07);
-}
-.ffd-effort-btn:hover { border-color: #b9c6ff; }
-.ffd-effort-btn .ffd-spark { color: var(--ffd-violet); font-size: 12px; }
-.ffd-effort-btn .ffd-caret { color: var(--ffd-sub); font-size: 10px; }
-.ffd-effort-btn .ffd-lvl { color: var(--ffd-blue); font-weight: 800; }
-
-.ffd-effort-pop {
-  position: fixed; z-index: 2147483002;
-  width: 322px; padding: 15px 16px 13px;
-  background: var(--ffd-card); border: 1px solid var(--ffd-line);
-  border-radius: 18px; box-shadow: var(--ffd-shadow);
-  animation: ffd-pop .16s ease-out;
-}
-.ffd-effort-pop[hidden] { display: none; }
-.ffd-effort-top { position: relative; min-height: 48px; display: flex; align-items: flex-start; gap: 10px; }
-.ffd-effort-spark {
-  flex: none; margin-top: 4px; width: 20px; height: 20px;
-  display: grid; place-items: center; font-size: 15px; line-height: 1;
-  color: #9aa6c4; transition: color .2s, transform .2s;
-}
-.ffd-effort-spark.is-hot { color: var(--ffd-violet); transform: rotate(12deg) scale(1.1); text-shadow: 0 0 12px rgba(139,70,239,.55); }
-.ffd-effort-meta { flex: 1; min-width: 0; text-align: center; padding-right: 18px; }
-.ffd-effort-name {
-  display: inline-flex; align-items: center; gap: 3px;
-  font-size: 15px; font-weight: 800; color: var(--ffd-blue); line-height: 1.3;
-  background: none; border: 0; padding: 0;
-}
-.ffd-effort-name:hover { opacity: .75; }
-.ffd-effort-name .ffd-chev { font-size: 12px; color: var(--ffd-sub); }
-.ffd-effort-model { font-size: 12px; color: var(--ffd-sub); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ffd-effort-tip { font-size: 13px; font-weight: 700; color: var(--ffd-violet); line-height: 1.4; margin-top: 7px; }
-.ffd-effort-reset {
-  position: absolute; right: -2px; top: -2px;
-  width: 26px; height: 26px; border: 0; border-radius: 50%;
-  background: transparent; color: var(--ffd-sub); font-size: 16px; line-height: 1;
-  display: grid; place-items: center;
-}
-.ffd-effort-reset:hover { background: var(--ffd-track); color: var(--ffd-ink); }
-
-.ffd-slider { position: relative; height: 30px; margin: 9px 2px 4px; touch-action: none; cursor: pointer; outline: none; }
-.ffd-slider:focus-visible .ffd-thumb { box-shadow: 0 0 0 4px rgba(47,107,255,.3), 0 2px 6px rgba(20,30,70,.28); }
-.ffd-track {
-  position: absolute; inset: 0; border-radius: 999px; background: var(--ffd-track);
-  overflow: hidden;
-}
-.ffd-dots { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 11px; }
-.ffd-dots i { width: 3px; height: 3px; border-radius: 50%; background: rgba(110, 125, 165, .45); }
-.ffd-fill {
-  position: absolute; left: 0; top: 0; bottom: 0; width: var(--ffd-pct, 0%);
-  border-radius: 999px 0 0 999px;
-  background:
-    radial-gradient(1.5px 1.5px at 18% 32%, rgba(255,255,255,.85), transparent 100%),
-    radial-gradient(1.5px 1.5px at 42% 70%, rgba(255,255,255,.65), transparent 100%),
-    radial-gradient(1px 1px at 68% 28%, rgba(255,255,255,.8), transparent 100%),
-    radial-gradient(1.5px 1.5px at 82% 62%, rgba(255,255,255,.6), transparent 100%),
-    radial-gradient(1px 1px at 30% 82%, rgba(255,255,255,.7), transparent 100%),
-    linear-gradient(90deg, #1f5fe0 0%, #4a48dd 48%, #8b3fe8 100%);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 13px) 50%, 100% 100%, 0 100%);
-  transition: width .08s linear;
-}
-.ffd-slider.is-dragging .ffd-fill { transition: none; }
-.ffd-thumb {
-  position: absolute; top: 2px; left: calc(var(--ffd-pct, 0%) - 13px);
-  width: 26px; height: 26px; border-radius: 50%; background: #fff;
-  box-shadow: 0 2px 7px rgba(20, 30, 70, .28), inset 0 0 0 1px rgba(20,30,70,.06);
-  transition: left .08s linear;
-}
-.ffd-slider.is-dragging .ffd-thumb { transition: none; }
-.ffd-ticks { display: flex; justify-content: space-between; padding: 0 5px; margin-top: 2px; }
-.ffd-ticks span { font-size: 10px; color: var(--ffd-sub); user-select: none; }
-.ffd-ticks span.is-active { color: var(--ffd-blue); font-weight: 800; }
-.ffd-effort-foot {
-  margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--ffd-line);
-  display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--ffd-sub);
-}
-.ffd-effort-foot .ffd-spacer { flex: 1; }
-.ffd-effort-foot button {
-  border: 0; background: transparent; color: var(--ffd-sub); font-size: 11px; padding: 2px 4px;
-}
-.ffd-effort-foot button:hover { color: var(--ffd-blue); }
-
-.ffd-model-menu {
-  position: absolute; z-index: 5; left: 14px; right: 14px; top: 44px;
-  padding: 6px; border: 1px solid var(--ffd-line); border-radius: 12px;
-  background: var(--ffd-card); box-shadow: var(--ffd-shadow);
-}
-.ffd-model-menu[hidden] { display: none; }
-.ffd-model-menu button {
-  display: flex; align-items: center; width: 100%; gap: 8px;
-  padding: 8px 10px; border: 0; border-radius: 8px;
-  background: transparent; color: var(--ffd-ink); font-size: 12px; text-align: left;
-}
-.ffd-model-menu button:hover { background: var(--ffd-track); }
-.ffd-model-menu button .ffd-check { margin-left: auto; color: var(--ffd-blue); font-weight: 800; }
 
 /* ---------------- floating ball: gear + wrap ---------------- */
 .ffd-ball-wrap {
@@ -272,7 +166,7 @@ globalThis.FFD_CSS = String.raw`
   pointer-events: none; background: rgba(6, 10, 24, var(--ffd-dim, .22));
 }
 .ffd-themed .ffd-head, .ffd-themed .ffd-foot, .ffd-themed .ffd-appe-head,
-.ffd-themed .ffd-appe-body, .ffd-themed .ffd-effort-top { text-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
+.ffd-themed .ffd-appe-body { text-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
 .ffd-themed {
   background: transparent !important;
   border-color: rgba(255, 255, 255, .22) !important;
@@ -280,10 +174,9 @@ globalThis.FFD_CSS = String.raw`
   box-shadow: 0 18px 48px rgba(30, 44, 110, .35), inset 0 0 0 1px rgba(255, 255, 255, .07) !important;
 }
 .ffd-themed .ffd-head, .ffd-themed .ffd-stage, .ffd-themed .ffd-foot,
-.ffd-themed .ffd-effort-top, .ffd-themed .ffd-slider, .ffd-themed .ffd-ticks,
-.ffd-themed .ffd-effort-foot, .ffd-themed .ffd-appe-head,
+.ffd-themed .ffd-appe-head,
 .ffd-themed .ffd-appe-body, .ffd-themed .ffd-appe-foot { position: relative; z-index: 1; }
-.ffd-themed .ffd-head, .ffd-themed .ffd-foot, .ffd-themed .ffd-effort-foot,
+.ffd-themed .ffd-head, .ffd-themed .ffd-foot,
 .ffd-themed .ffd-appe-head, .ffd-themed .ffd-appe-foot { border-color: rgba(255, 255, 255, .14) !important; }
 .ffd-themed .ffd-stage { background: transparent !important; }
 .ffd-themed .ffd-overlay {
@@ -456,7 +349,6 @@ html.dark .ffd-section {
 @media (max-width: 640px) {
   .ffd-panel { right: 12px; left: 12px; bottom: 92px; width: auto; }
   .ffd-stage canvas { height: 200px; }
-  .ffd-effort-pop { width: min(322px, calc(100vw - 24px)); }
   .ffd-appearance { width: min(340px, calc(100vw - 24px)); }
   .ffd-ball-wrap { right: 14px; bottom: 14px; }
 }

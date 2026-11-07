@@ -29,7 +29,7 @@
     videoRate: 1, videoMuted: true, videoLoop: true,
     glass: true, blur: 14, saturate: 140,
     uiAlpha: 55, dim: 25, radius: 16, glow: 40,
-    scope: { global: true, panel: true, ball: true, effort: true },
+    scope: { global: true, panel: true, ball: true },
     customCss: ''
   };
 
@@ -44,7 +44,7 @@
       if (raw.scope && typeof raw.scope === 'object') {
         s.scope = {
           global: raw.scope.global !== false, panel: raw.scope.panel !== false,
-          ball: raw.scope.ball !== false, effort: raw.scope.effort !== false
+          ball: raw.scope.ball !== false
         };
       }
       return s;
@@ -199,9 +199,8 @@
           '<div class="ffd-field"><label>应用范围</label><div class="ffd-scope">' +
             '<label><input type="checkbox" data-scope="global"> 全局 UI</label>' +
             '<label><input type="checkbox" data-scope="panel"> 游戏面板</label>' +
-            '<label><input type="checkbox" data-scope="ball"> 悬浮球</label>' +
-            '<label><input type="checkbox" data-scope="effort"> 强度浮层</label>' +
-          '</div></div>' +
+          '<label><input type="checkbox" data-scope="ball"> 悬浮球</label>' +
+        '</div></div>' +
           '<div class="ffd-field"><label>自定义 CSS（高级，可直接写 DSH 选择器）</label>' +
             '<textarea class="ffd-custom-css" rows="3" placeholder="[data-slot=&#39;main&#39;] { background: transparent !important; }"></textarea></div>' +
         '</div>' +
@@ -287,10 +286,8 @@
       setVar('--ffd-ball-alpha', '1');
 
       var panel = box.querySelector('.ffd-panel');
-      var effortPop = box.querySelector('.ffd-effort-pop');
       var ball = box.querySelector('.ffd-ball');
       if (panel) panel.classList.toggle('ffd-themed', themed && s.scope.panel);
-      if (effortPop) effortPop.classList.toggle('ffd-themed', themed && s.scope.effort);
       if (ball) ball.classList.toggle('ffd-themed', themed && s.scope.ball);
       floating.classList.toggle('ffd-themed', themed);
       card.classList.toggle('ffd-themed', themed);
@@ -316,7 +313,7 @@
         (s.enabled && s.scope.global ? (s.customCss || '') : '');
     }
     function ensureLayers() {
-      [box.querySelector('.ffd-panel'), box.querySelector('.ffd-effort-pop'), floating, card].forEach(function (target) {
+      [box.querySelector('.ffd-panel'), floating, card].forEach(function (target) {
         if (!target) return;
         if (!target.querySelector(':scope > .ffd-bg-layer')) {
           var layer = el('div', 'ffd-bg-layer');

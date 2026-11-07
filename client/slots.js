@@ -1,7 +1,7 @@
 /* DSH client plugin body, modelled on dsh-codex-effort:
    window.__ModuleLoader__ -> factory -> { apply, inject }
    apply(ctx) registers React components through ctx.slots, and uses ctx.effect
-   for lifecycle cleanup. The heavy DOM engines (canvas runner, effort slider,
+   for lifecycle cleanup. The heavy DOM engines (canvas runner,
    global background) stay in their own plain-script modules. */
 (function () {
   'use strict';
@@ -134,7 +134,6 @@
 
       var disposers = [
         globalThis.FFD_DINO.mount(root),
-        globalThis.FFD_EFFORT.mount(root),
         globalThis.FFD_APPEARANCE.mount(root)
       ];
       function cleanupUI() {

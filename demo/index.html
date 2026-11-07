@@ -40,8 +40,8 @@
   .composer textarea { width: 100%; min-height: 62px; resize: none; border: 0; outline: 0; background: transparent; color: #e8ecf8; font: inherit; }
   .composer textarea::placeholder { color: #6f7c9f; }
   .tools { display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid #253054; position: relative; min-height: 44px; }
-  .native-effort, .ghost, .send { height: 32px; padding: 0 12px; border-radius: 999px; font-size: 12px; border: 1px solid #333e63; background: #1a2441; color: #c9d4f2; }
-  .native-effort:hover, .ghost:hover { border-color: #5b74c9; }
+  .ghost, .send { height: 32px; padding: 0 12px; border-radius: 999px; font-size: 12px; border: 1px solid #333e63; background: #1a2441; color: #c9d4f2; }
+  .ghost:hover { border-color: #5b74c9; }
   .send { margin-left: auto; border: 0; background: linear-gradient(100deg,#3f6ef5,#8a4cf0); color: #fff; font-weight: 700; padding: 0 16px; }
   .live { font-size: 11px; color: #7f8cae; }
   .settings-overlay { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; background: rgba(5, 9, 20, .62); }
@@ -89,12 +89,8 @@
             <p>右下角圆形悬浮球，点一下展开跑酷。空格 / ↑ / 点击跳跃，↓ 下蹲。可拖动换位置，最高分自动存在本机，破纪录会显示表情包。</p>
           </div>
           <div class="tile">
-            <h3>② 思考强度 · GPT 式拖动条</h3>
-            <p>下方输入框里的「思考深度」已被替换成胶囊拖动条：蓝紫渐变、燕尾斜切、白色圆点、档位名 + 模型副标题、⟳ 重置。拖动时显示吐槽文案。</p>
-          </div>
-          <div class="tile">
-            <h3>③ 左栏「外观」选项 · 全局 UI 编辑器</h3>
-            <p>按 <code>dsh-codex-effort</code> 的写法，插件用 <code>ctx.slots.inject('settings.section')</code> 在 DSH <b>设置左栏新增一个「外观」分区</b>，并在会话头部加「🐳 跑酷」快捷入口。分区里有跑酷游戏卡片（最高分 / 开始按钮）和完整的外观编辑器：跟随主题 / 纯色 / 6 组渐变 / 上传图片 / <b>上传或远程视频</b>，以及毛玻璃、面板不透明度、压暗、圆角、辉光、应用范围与自定义 CSS。</p>
+            <h3>② 左栏「外观」选项 · 全局 UI 编辑器</h3>
+            <p>按 <code>dsh-codex-effort</code> 的写法，插件用 <code>ctx.slots.inject('settings.section')</code> 在 DSH <b>设置左栏新增一个「外观」分区</b>。分区里有跑酷游戏卡片（最高分 / 开始按钮）和完整的外观编辑器：跟随主题 / 纯色 / 6 组渐变 / 上传图片 / <b>上传或远程视频</b>，以及毛玻璃、面板不透明度、压暗、圆角、辉光、应用范围与自定义 CSS。</p>
           </div>
         </div>
         <div class="src">
@@ -102,7 +98,7 @@
           <a href="https://www.bilibili.com/video/BV1C5YZ69EdX/" target="_blank" rel="noreferrer">B 站 BV1C5YZ69EdX 前 8 秒</a> —— 每 0.5 秒截帧共 16 帧，据此还原 GPT-6 / Codex 的「强度」拖动条。
         </div>
       </div>
-      <div class="note">提示：打开游戏后按 <kbd>空格</kbd> 开跑；点击悬浮球收起。右侧的 <kbd>⟳</kbd> 可把思考强度重置为「深度」。</div>
+      <div class="note">提示：打开游戏后按 <kbd>空格</kbd> 开跑；点击悬浮球收起。点左侧「🎨 外观」可打开全局 UI 编辑器。</div>
 
       <!-- Simulates the host rendering our `settings.section` React component -->
       <div id="appearance-view" class="ffd-section" hidden>
@@ -120,9 +116,7 @@
     <div class="composer">
       <textarea placeholder="给 DeepSeek 发消息…（这个输入框仅用于演示，不会真的发送）"></textarea>
       <div class="tools" id="tools">
-        <button class="native-effort" id="native-effort" type="button">✧ 思考深度：标准 ▾</button>
         <button class="ghost" type="button" onclick="return false">＋ 附件</button>
-        <span class="live" id="live"></span>
         <button class="send" type="button">发送 ↑</button>
       </div>
     </div>
@@ -132,7 +126,6 @@
 <script src="../client/art.js"></script>
 <script src="../client/styles.js"></script>
 <script src="../client/dino.js"></script>
-<script src="../client/effort.js"></script>
 <script src="../client/appearance.js"></script>
 <script>
   (function () {
@@ -143,13 +136,7 @@
     root.className = 'ffd-root';
     document.body.appendChild(root);
     globalThis.FFD_DINO.mount(root);
-    globalThis.FFD_EFFORT.mount(root);
     globalThis.FFD_APPEARANCE.mount(root);
-
-    var live = document.getElementById('live');
-    function show(l) { live.textContent = '当前强度：' + l.label + '（' + l.value + '）'; }
-    show(globalThis.FFD_EFFORT.get());
-    document.addEventListener('ffd:effort-change', function (e) { show(e.detail); });
 
     // Simulate what the DSH host does for our `settings.section` React component:
     // it renders a slot container and the plugin mounts its editor into it.
@@ -189,12 +176,11 @@
       if (tries > 0) setTimeout(function () { waitForCard(cb, tries - 1); }, 120);
     }
 
-    // ?showcase=dino / effort / play / appearance / glass / video
+    // ?showcase=dino / play / appearance / glass / video
     var mode = new URLSearchParams(location.search).get('showcase');
-    if (mode === 'dino' || mode === 'effort' || mode === 'play') {
+    if (mode === 'dino' || mode === 'play') {
       setTimeout(function () {
-        var target = mode === 'effort' ? '.ffd-effort-btn' : '.ffd-ball';
-        var node = document.querySelector(target);
+        var node = document.querySelector('.ffd-ball');
         if (node) node.click();
         if (mode === 'play') {
           var play = document.getElementById('ffd-play');

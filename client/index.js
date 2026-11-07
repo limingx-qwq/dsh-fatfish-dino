@@ -3,7 +3,6 @@
 import './art.js'
 import './styles.js'
 import './dino.js'
-import './effort.js'
 import './appearance.js'
 
 export const name = 'fatfish-dino-client'
@@ -23,7 +22,6 @@ export function apply(ctx) {
 
   const disposers = [
     globalThis.FFD_DINO.mount(root),
-    globalThis.FFD_EFFORT.mount(root),
     globalThis.FFD_APPEARANCE.mount(root)
   ]
 
